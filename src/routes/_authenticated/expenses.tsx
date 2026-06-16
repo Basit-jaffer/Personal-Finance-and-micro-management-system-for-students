@@ -337,10 +337,20 @@ function ExpensesContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(expensesQuery.data ?? []).map((e) => (
+              {(expensesQuery.data ?? []).map((e) => {
+                const isEditing = editId === e.id;
+                return (
                 <TableRow key={e.id}>
-                  <TableCell className="text-muted-foreground">{e.spent_at}</TableCell>
-                  <TableCell className="font-medium">{e.description || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground tabular-nums">
+                    {isEditing
+                      ? <Input type="date" value={editDate} onChange={(ev) => setEditDate(ev.target.value)} className="h-8" />
+                      : e.spent_at}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {isEditing
+                      ? <Input value={editDesc} onChange={(ev) => setEditDesc(ev.target.value)} className="h-8" maxLength={500} />
+                      : (e.description || "—")}
+                  </TableCell>
                   <TableCell>
                     <Select
                       value={e.category_id ?? UNCAT}
@@ -364,14 +374,35 @@ function ExpensesContent() {
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{Number(e.amount)}</TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="ghost" onClick={() => confirm("Delete this expense?") && delMut.mutate(e.id)}>
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
+                  <TableCell className="text-right tabular-nums">
+                    {isEditing
+                      ? <Input type="number" min="0" step="0.01" value={editAmount} onChange={(ev) => setEditAmount(ev.target.value)} className="h-8 text-right" />
+                      : Number(e.amount).toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {isEditing ? (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => saveEdit(e.id)} title="Save">
+                          <Check className="size-4 text-success" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={cancelEdit} title="Cancel">
+                          <X className="size-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => startEdit(e)} title="Edit">
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => confirm("Delete this expense?") && delMut.mutate(e.id)} title="Delete">
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      </>
+                    )}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
               {(expensesQuery.data ?? []).length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-6">

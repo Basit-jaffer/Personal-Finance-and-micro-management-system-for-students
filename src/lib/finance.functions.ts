@@ -661,7 +661,7 @@ export const generateMonthlyReport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Re-use dashboard math
     const { start, end, days_in_month } = monthRange(data.year, data.month);
-    const [catRes, incRes, expRes] = await Promise.all([
+    const [catRes, incRes, expRes, contribRes] = await Promise.all([
       context.supabase.from("categories").select("*"),
       context.supabase
         .from("incomes")
@@ -675,16 +675,24 @@ export const generateMonthlyReport = createServerFn({ method: "POST" })
         .eq("user_id", context.userId)
         .gte("spent_at", start)
         .lt("spent_at", end),
+      context.supabase
+        .from("saving_contributions")
+        .select("amount")
+        .eq("user_id", context.userId)
+        .gte("contributed_on", start)
+        .lt("contributed_on", end),
     ]);
     if (catRes.error) throw new Error(catRes.error.message);
     if (incRes.error) throw new Error(incRes.error.message);
     if (expRes.error) throw new Error(expRes.error.message);
+    if (contribRes.error) throw new Error(contribRes.error.message);
 
     const categories = catRes.data ?? [];
     const expenses = expRes.data ?? [];
     const total_income = (incRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
     const total_spent = expenses.reduce((s, e) => s + Number(e.amount), 0);
-    const remaining = total_income - total_spent;
+    const total_savings = (contribRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
+    const remaining = total_income - total_spent - total_savings;
 
     const today = new Date();
     const inThisMonth =
@@ -692,7 +700,8 @@ export const generateMonthlyReport = createServerFn({ method: "POST" })
     const days_passed = inThisMonth ? Math.max(1, today.getUTCDate()) : days_in_month;
     const forecast_spend =
       days_passed > 0 ? (total_spent / days_passed) * days_in_month : 0;
-    const forecast_remaining = total_income - forecast_spend;
+    const forecast_remaining = total_income - forecast_spend - total_savings;
+
 
     const breakdown = categories.map((c) => {
       const spent = expenses

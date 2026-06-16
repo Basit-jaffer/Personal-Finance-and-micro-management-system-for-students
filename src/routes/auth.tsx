@@ -20,6 +20,9 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -39,16 +42,29 @@ function AuthPage() {
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
+    if (!fullName.trim()) return toast.error("Please enter your full name");
+    if (password !== confirmPassword) return toast.error("Passwords do not match");
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: { full_name: fullName.trim() },
+      },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Account created. You can sign in now.");
+    if (data.session) {
+      toast.success("Account created. Welcome!");
+      navigate({ to: "/dashboard", replace: true });
+    } else {
+      toast.success("Verification email sent", {
+        description: `We sent a confirmation link to ${email}. Please check your inbox to verify your account.`,
+      });
+    }
   }
+
 
   return (
     <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
@@ -113,6 +129,10 @@ function AuthPage() {
                 <TabsContent value="signup">
                   <form onSubmit={signUp} className="space-y-4 mt-6">
                     <div className="space-y-2">
+                      <Label htmlFor="name-up">Full name</Label>
+                      <Input id="name-up" type="text" placeholder="Jane Doe" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="email-up">Email</Label>
                       <Input id="email-up" type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
                     </div>
@@ -120,10 +140,18 @@ function AuthPage() {
                       <Label htmlFor="pw-up">Password</Label>
                       <Input id="pw-up" type="password" placeholder="At least 6 characters" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pw-up2">Confirm password</Label>
+                      <Input id="pw-up2" type="password" placeholder="Re-enter your password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      We'll send a verification link to your email after signup.
+                    </p>
                     <Button type="submit" disabled={loading} className="w-full h-11 font-medium">
                       {loading ? "Creating…" : "Create account"}
                     </Button>
                   </form>
+
                 </TabsContent>
               </Tabs>
             </CardContent>

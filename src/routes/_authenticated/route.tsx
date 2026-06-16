@@ -11,7 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LayoutDashboard, Receipt, PiggyBank, Target, FileBarChart, Wallet, LogOut, Trash2, Menu, X, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Receipt, PiggyBank, Target, FileBarChart, LogOut, Trash2, Menu, X, ArrowLeft } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteAllMyData } from "@/lib/finance.functions";

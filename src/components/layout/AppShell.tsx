@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard, Receipt, PiggyBank, Target, FileBarChart,
-  LogOut, Trash2, Menu, X, ChevronRight, Sparkles,
+  LogOut, Trash2, Menu, X, ChevronRight, Sparkles, ArrowLeft,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { toast } from "sonner";
@@ -177,6 +177,20 @@ export function AppShell({ email, children }: { email: string; children: ReactNo
           </DropdownMenu>
         </header>
         <main className="flex-1 p-4 lg:p-8 max-w-[1400px] w-full mx-auto">
+          {pathname !== "/dashboard" && (
+            <div className="mb-4 lg:mb-6">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
+              >
+                <Link to="/dashboard">
+                  <ArrowLeft className="size-4" /> Back to dashboard
+                </Link>
+              </Button>
+            </div>
+          )}
           {children}
         </main>
       </div>

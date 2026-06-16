@@ -248,33 +248,42 @@ function DashboardContent() {
 
                 <div className="space-y-4 pt-2 border-t border-border/60">
                   {data.category_breakdown.map((c) => {
-                    const pct = Math.min(100, c.ratio * 100);
+                    const hasBudget = c.budget > 0;
+                    const pct = hasBudget ? Math.min(100, c.ratio * 100) : 0;
                     return (
                       <div key={c.id} className="group">
                         <div className="flex justify-between items-center text-sm mb-1.5">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className="font-medium truncate">{c.name}</span>
-                            {c.status === "exceeded" && (
+                            {hasBudget && c.status === "exceeded" && (
                               <Badge variant="destructive" className="text-[10px] h-5">Over</Badge>
                             )}
-                            {c.status === "warn" && (
+                            {hasBudget && c.status === "warn" && (
                               <Badge className="bg-warning/15 text-warning-foreground border-warning/30 text-[10px] h-5">Near limit</Badge>
+                            )}
+                            {!hasBudget && (
+                              <Link to="/budgets" className="text-[10px] uppercase tracking-wide text-muted-foreground hover:text-accent transition">
+                                Set budget
+                              </Link>
                             )}
                           </div>
                           <span className="text-muted-foreground num text-xs shrink-0">
-                            <span className="text-foreground font-medium">{fmt(c.spent)}</span> / {fmt(c.budget)}
+                            <span className="text-foreground font-medium">{fmt(c.spent)}</span>
+                            {hasBudget ? ` / ${fmt(c.budget)}` : " spent"}
                           </span>
                         </div>
                         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${
-                              c.status === "exceeded"
+                              !hasBudget
+                                ? "bg-muted-foreground/30"
+                                : c.status === "exceeded"
                                 ? "bg-destructive"
                                 : c.status === "warn"
                                 ? "bg-warning"
                                 : "bg-grad-accent"
                             }`}
-                            style={{ width: `${pct}%` }}
+                            style={{ width: hasBudget ? `${pct}%` : "100%" }}
                           />
                         </div>
                       </div>

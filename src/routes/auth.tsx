@@ -42,16 +42,29 @@ function AuthPage() {
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
+    if (!fullName.trim()) return toast.error("Please enter your full name");
+    if (password !== confirmPassword) return toast.error("Passwords do not match");
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: { full_name: fullName.trim() },
+      },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Account created. You can sign in now.");
+    if (data.session) {
+      toast.success("Account created. Welcome!");
+      navigate({ to: "/dashboard", replace: true });
+    } else {
+      toast.success("Verification email sent", {
+        description: `We sent a confirmation link to ${email}. Please check your inbox to verify your account.`,
+      });
+    }
   }
+
 
   return (
     <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">

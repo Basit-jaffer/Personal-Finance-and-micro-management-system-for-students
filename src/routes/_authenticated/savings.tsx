@@ -120,47 +120,110 @@ function SavingsContent() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {(goalsQuery.data ?? []).map((g) => {
-          const pct = Math.min(100, (Number(g.saved_amount) / Number(g.target_amount)) * 100);
-          return (
-            <Card key={g.id}>
-              <CardContent className="p-5 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-semibold">{g.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {Number(g.saved_amount)} of {Number(g.target_amount)}
-                    </div>
-                  </div>
-                  <Button size="sm" variant="ghost" onClick={() => confirm(`Delete "${g.name}"?`) && delMut.mutate(g.id)}>
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
-                </div>
-                <Progress value={pct} />
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number" min="0" step="0.01" defaultValue={Number(g.saved_amount)}
-                    className="h-8"
-                    onBlur={(e) => {
-                      const n = Number(e.target.value);
-                      if (Number.isFinite(n) && n >= 0 && n !== Number(g.saved_amount)) {
-                        updMut.mutate({
-                          id: g.id, name: g.name,
-                          target_amount: Number(g.target_amount), saved_amount: n,
-                        });
-                      }
-                    }}
-                  />
-                  <span className="text-xs text-muted-foreground">{Math.round(pct)}%</span>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {(goalsQuery.data ?? []).map((g) => (
+          <GoalCard
+            key={g.id}
+            goal={g}
+            onUpdate={(saved_amount) =>
+              updMut.mutate({
+                id: g.id,
+                name: g.name,
+                target_amount: Number(g.target_amount),
+                saved_amount,
+              })
+            }
+            onDelete={() => confirm(`Delete "${g.name}"?`) && delMut.mutate(g.id)}
+            saving={updMut.isPending}
+          />
+        ))}
         {(goalsQuery.data ?? []).length === 0 && (
           <p className="text-sm text-muted-foreground">No savings goals yet.</p>
         )}
       </div>
+    </div>
+  );
+}
+
+function GoalCard({
+  goal,
+  onUpdate,
+  onDelete,
+  saving,
+}: {
+  goal: { id: string; name: string; target_amount: number | string; saved_amount: number | string };
+  onUpdate: (saved_amount: number) => void;
+  onDelete: () => void;
+  saving: boolean;
+}) {
+  const savedNow = Number(goal.saved_amount);
+  const targetNum = Number(goal.target_amount);
+  const pct = Math.min(100, (savedNow / targetNum) * 100);
+  const [add, setAdd] = useState("");
+  const reached = savedNow >= targetNum;
+
+  return (
+    <Card>
+      <CardContent className="p-5 space-y-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="font-semibold">{goal.name}</div>
+            <div className="text-xs text-muted-foreground tabular-nums">
+              {savedNow.toFixed(2)} of {targetNum.toFixed(2)}
+            </div>
+          </div>
+          <Button size="sm" variant="ghost" onClick={onDelete}>
+            <Trash2 className="size-4 text-destructive" />
+          </Button>
+        </div>
+        <div className="space-y-1">
+          <Progress value={pct} />
+          <div className="flex justify-between text-xs text-muted-foreground tabular-nums">
+            <span>{Math.round(pct)}%</span>
+            <span>{Math.max(0, targetNum - savedNow).toFixed(2)} to go</span>
+          </div>
+        </div>
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const n = Number(add);
+            if (!Number.isFinite(n) || n <= 0) return toast.error("Enter an amount > 0");
+            onUpdate(savedNow + n);
+            setAdd("");
+          }}
+        >
+          <Input
+            type="number"
+            min="0.01"
+            step="0.01"
+            placeholder={reached ? "Goal reached 🎉" : "Add money"}
+            value={add}
+            onChange={(e) => setAdd(e.target.value)}
+            className="h-9"
+          />
+          <Button type="submit" size="sm" disabled={saving || !add}>
+            Add
+          </Button>
+        </form>
+        <details className="text-xs text-muted-foreground">
+          <summary className="cursor-pointer hover:text-foreground">Edit saved amount</summary>
+          <div className="flex gap-2 mt-2">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={savedNow}
+              className="h-8"
+              onBlur={(e) => {
+                const n = Number(e.target.value);
+                if (Number.isFinite(n) && n >= 0 && n !== savedNow) onUpdate(n);
+              }}
+            />
+          </div>
+        </details>
+      </CardContent>
+    </Card>
+  );
     </div>
   );
 }

@@ -123,8 +123,10 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          description: string | null
           id: string
           month: number
+          occurred_on: string
           source: string
           user_id: string
           year: number
@@ -132,8 +134,10 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          description?: string | null
           id?: string
           month: number
+          occurred_on?: string
           source?: string
           user_id: string
           year: number
@@ -141,8 +145,10 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          description?: string | null
           id?: string
           month?: number
+          occurred_on?: string
           source?: string
           user_id?: string
           year?: number
@@ -193,6 +199,44 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      saving_contributions: {
+        Row: {
+          amount: number
+          contributed_on: string
+          created_at: string
+          goal_id: string
+          id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          contributed_on?: string
+          created_at?: string
+          goal_id: string
+          id?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          contributed_on?: string
+          created_at?: string
+          goal_id?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saving_contributions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "saving_goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saving_goals: {
         Row: {

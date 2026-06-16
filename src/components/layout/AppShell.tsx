@@ -1,5 +1,5 @@
-import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Link, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,16 +17,12 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteAllMyData } from "@/lib/finance.functions";
 
-export const Route = createFileRoute("/_authenticated")({
-  ssr: false,
-  beforeLoad: async () => {
-    if (typeof window === "undefined") return;
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/auth" });
-    return { userId: data.user.id, email: data.user.email ?? "" };
-  },
-  component: AppShell,
-});
+export async function requireAuth() {
+  if (typeof window === "undefined") return { userId: "", email: "" };
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) throw redirect({ to: "/auth" });
+  return { userId: data.user.id, email: data.user.email ?? "" };
+}
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -36,8 +32,7 @@ const NAV = [
   { to: "/reports", label: "Reports", icon: FileBarChart },
 ] as const;
 
-function AppShell() {
-  const { email } = Route.useRouteContext();
+export function AppShell({ email, children }: { email: string; children: ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -154,7 +149,7 @@ function AppShell() {
           </DropdownMenu>
         </header>
         <main className="flex-1 p-4 lg:p-8 max-w-7xl w-full mx-auto">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

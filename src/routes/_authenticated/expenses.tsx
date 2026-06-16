@@ -14,8 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
+import { AppShell, requireAuth } from "@/components/layout/AppShell";
 
 export const Route = createFileRoute("/_authenticated/expenses")({
+  ssr: false,
+  beforeLoad: requireAuth,
   component: ExpensesPage,
 });
 
@@ -24,6 +27,15 @@ const UNCAT = "__uncat__";
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
 function ExpensesPage() {
+  const { email } = Route.useRouteContext();
+  return (
+    <AppShell email={email}>
+      <ExpensesContent />
+    </AppShell>
+  );
+}
+
+function ExpensesContent() {
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth() + 1;

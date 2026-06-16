@@ -61,8 +61,9 @@ function AuthPage() {
       toast.success("Account created. Welcome!");
       navigate({ to: "/dashboard", replace: true });
     } else {
+      setSignupSentEmail(email);
       toast.success("Verification email sent", {
-        description: `We sent a confirmation link to ${email}. Please check your inbox to verify your account.`,
+        description: `We sent a confirmation link to ${email}.`,
       });
     }
   }

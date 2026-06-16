@@ -71,12 +71,12 @@ function AppShell() {
           open ? "translate-x-0 flex" : "-translate-x-full hidden lg:flex"
         }`}
       >
-        <div className="px-6 h-16 flex items-center gap-2 border-b border-sidebar-border">
+        <Link to="/dashboard" className="px-6 h-16 flex items-center gap-2 border-b border-sidebar-border hover:bg-white/5 transition">
           <div className="size-8 rounded-lg bg-accent text-accent-foreground grid place-items-center">
             <Wallet className="size-4" />
           </div>
-          <span className="font-semibold tracking-tight">Pocket</span>
-        </div>
+          <span className="font-semibold tracking-tight">Budget Buddy</span>
+        </Link>
         <nav className="flex-1 p-3 space-y-1">
           {NAV.map((item) => (
             <Link

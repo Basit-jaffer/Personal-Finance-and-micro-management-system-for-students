@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   listExpenses, addExpense, updateExpense, deleteExpense,
-  listCategories, suggestCategory, parseExpense,
+  listCategories, suggestCategory, parseExpense, upsertCategory,
 } from "@/lib/finance.functions";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Sparkles, Wand2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Trash2, Sparkles, Wand2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell, requireAuth } from "@/components/layout/AppShell";
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/expenses")({
 });
 
 const UNCAT = "__uncat__";
+const NEW_CAT = "__new__";
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -48,6 +50,7 @@ function ExpensesContent() {
   const listCats = useServerFn(listCategories);
   const suggest = useServerFn(suggestCategory);
   const parseNL = useServerFn(parseExpense);
+  const upsertCat = useServerFn(upsertCategory);
 
   const expensesQuery = useQuery({
     queryKey: ["expenses", year, month],
@@ -64,6 +67,46 @@ function ExpensesContent() {
 
   const [nlSentence, setNlSentence] = useState("");
   const [parsing, setParsing] = useState(false);
+
+  // Inline new-category dialog
+  const [newCatOpen, setNewCatOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatBudget, setNewCatBudget] = useState("");
+  const [newCatTarget, setNewCatTarget] = useState<"add" | "row">("add");
+  const [newCatRowId, setNewCatRowId] = useState<string | null>(null);
+
+  const createCatMut = useMutation({
+    mutationFn: () =>
+      upsertCat({
+        data: {
+          name: newCatName.trim(),
+          monthly_budget: Number(newCatBudget || "0"),
+        },
+      }),
+    onSuccess: (cat: { id: string }) => {
+      toast.success(`Category "${newCatName.trim()}" created`);
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      if (newCatTarget === "add") {
+        setCategoryId(cat.id);
+      } else if (newCatRowId) {
+        updMut.mutate({ id: newCatRowId, category_id: cat.id });
+      }
+      setNewCatOpen(false);
+      setNewCatName("");
+      setNewCatBudget("");
+      setNewCatRowId(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function openNewCat(target: "add" | "row", rowId: string | null = null, prefill = "") {
+    setNewCatTarget(target);
+    setNewCatRowId(rowId);
+    setNewCatName(prefill);
+    setNewCatBudget("");
+    setNewCatOpen(true);
+  }
 
   const addMut = useMutation({
     mutationFn: () => add({

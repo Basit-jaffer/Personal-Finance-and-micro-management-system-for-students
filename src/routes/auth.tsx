@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Wallet } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
+import { Sparkles, ShieldCheck, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,

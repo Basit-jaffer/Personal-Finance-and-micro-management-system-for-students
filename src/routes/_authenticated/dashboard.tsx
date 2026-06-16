@@ -7,9 +7,10 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import {
   ArrowUpRight, AlertTriangle, TrendingUp, Wallet, Receipt, Activity,
-  ShieldCheck, Plus, ArrowDownRight, Sparkles,
+  ShieldCheck, Plus, ArrowDownRight, Sparkles, PiggyBank,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,

@@ -170,7 +170,7 @@ export const updateIncome = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { id, ...patch } = data;
-    const update: Record<string, unknown> = { ...patch };
+    const update: Database["public"]["Tables"]["incomes"]["Update"] = { ...patch };
     if (patch.occurred_on) {
       const d2 = new Date(patch.occurred_on + "T00:00:00Z");
       update.year = d2.getUTCFullYear();

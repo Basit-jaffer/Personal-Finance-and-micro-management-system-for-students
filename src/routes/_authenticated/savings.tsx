@@ -224,6 +224,4 @@ function GoalCard({
       </CardContent>
     </Card>
   );
-    </div>
-  );
 }

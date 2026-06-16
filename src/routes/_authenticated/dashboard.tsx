@@ -154,24 +154,30 @@ function DashboardContent() {
       )}
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <KPI
           icon={<Wallet className="size-4" />}
-          label="Monthly income"
+          label="Total income"
           value={fmt(data.total_income)}
           trend="up"
         />
         <KPI
           icon={<Receipt className="size-4" />}
-          label="Spent so far"
+          label="Spent"
           value={fmt(data.total_spent)}
           trend="down"
         />
         <KPI
+          icon={<PiggyBank className="size-4" />}
+          label="Saved"
+          value={fmt(data.total_savings ?? 0)}
+        />
+        <KPI
           icon={<ShieldCheck className="size-4" />}
-          label="Remaining"
+          label="Available"
           value={fmt(data.remaining)}
           tone={data.remaining < 0 ? "danger" : "success"}
+          sub="Income − Spent − Saved"
         />
         <KPI
           icon={<TrendingUp className="size-4" />}
@@ -181,6 +187,7 @@ function DashboardContent() {
           sub={`Spend ≈ ${fmt(data.forecast_spend)}`}
         />
       </div>
+
 
       {/* Charts row */}
       <div className="grid gap-6 lg:grid-cols-3">

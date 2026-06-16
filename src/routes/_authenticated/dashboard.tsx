@@ -99,6 +99,9 @@ function DashboardContent() {
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
               <Button asChild size="sm" className="bg-white text-slate-900 hover:bg-white/90 shadow-sm">
+                <Link to="/budgets"><Banknote className="size-4" /> Add income</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">
                 <Link to="/expenses"><Plus className="size-4" /> Add expense</Link>
               </Button>
               <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">

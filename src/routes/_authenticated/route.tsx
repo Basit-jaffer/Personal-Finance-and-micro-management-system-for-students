@@ -11,7 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LayoutDashboard, Receipt, PiggyBank, Target, FileBarChart, Wallet, LogOut, Trash2, Menu, X, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Receipt, PiggyBank, Target, FileBarChart, LogOut, Trash2, Menu, X, ArrowLeft } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteAllMyData } from "@/lib/finance.functions";
@@ -71,27 +72,35 @@ function AppShell() {
           open ? "translate-x-0 flex" : "-translate-x-full hidden lg:flex"
         }`}
       >
-        <Link to="/dashboard" className="px-6 h-16 flex items-center gap-2 border-b border-sidebar-border hover:bg-white/5 transition">
-          <div className="size-8 rounded-lg bg-accent text-accent-foreground grid place-items-center">
-            <Wallet className="size-4" />
-          </div>
-          <span className="font-semibold tracking-tight">Budget Buddy</span>
+        <Link
+          to="/dashboard"
+          className="px-5 h-20 flex items-center border-b border-sidebar-border hover:bg-white/[0.03] transition"
+        >
+          <Logo />
         </Link>
-        <nav className="flex-1 p-3 space-y-1">
+        <div className="px-5 pt-6 pb-2 text-[10px] uppercase tracking-[0.16em] text-sidebar-foreground/40">
+          Menu
+        </div>
+        <nav className="flex-1 px-3 space-y-0.5">
           {NAV.map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/70 hover:bg-white/5 hover:text-sidebar-foreground transition data-[status=active]:bg-white/10 data-[status=active]:text-sidebar-foreground"
+              className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/70 hover:bg-white/[0.04] hover:text-sidebar-foreground transition data-[status=active]:bg-white/[0.08] data-[status=active]:text-sidebar-foreground data-[status=active]:shadow-[inset_2px_0_0_0_hsl(var(--accent))]"
               activeProps={{ "data-status": "active" } as any}
             >
-              <item.icon className="size-4" />
-              {item.label}
+              <item.icon className="size-[18px] opacity-80 group-data-[status=active]:opacity-100" />
+              <span>{item.label}</span>
             </Link>
           ))}
         </nav>
-        <div className="p-3 border-t border-sidebar-border text-xs text-sidebar-foreground/50">
-          AI suggestions only — not financial advice.
+        <div className="m-3 p-4 rounded-xl bg-white/[0.03] border border-sidebar-border/60">
+          <div className="text-xs font-medium text-sidebar-foreground/80 mb-1">
+            AI-powered insights
+          </div>
+          <div className="text-[11px] leading-relaxed text-sidebar-foreground/50">
+            Suggestions only — not financial advice.
+          </div>
         </div>
       </aside>
 
@@ -112,11 +121,8 @@ function AppShell() {
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-accent text-accent-foreground grid place-items-center">
-              <Wallet className="size-4" />
-            </div>
-            <span className="font-semibold tracking-tight hidden sm:inline">Budget Buddy</span>
+          <Link to="/dashboard" className="lg:hidden flex items-center">
+            <Logo collapsed />
           </Link>
           {pathname !== "/dashboard" && (
             <Button asChild variant="ghost" size="sm" className="gap-1 ml-2">

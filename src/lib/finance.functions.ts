@@ -123,47 +123,116 @@ export const getCurrentIncome = createServerFn({ method: "GET" })
       .select("*")
       .eq("user_id", context.userId)
       .eq("year", data.year)
-      .eq("month", data.month);
+      .eq("month", data.month)
+      .order("occurred_on", { ascending: false });
     if (error) throw new Error(error.message);
     const total = (rows ?? []).reduce((s, r) => s + Number(r.amount), 0);
     return { rows: rows ?? [], total };
   });
 
-export const upsertIncome = createServerFn({ method: "POST" })
+const IncomeInput = z.object({
+  amount: z.number().positive().max(1_000_000_000),
+  source: z.string().trim().min(1).max(60),
+  occurred_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  description: z.string().trim().max(500).optional().nullable(),
+});
+
+export const addIncome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        year: z.number().int().min(2000).max(2100),
-        month: z.number().int().min(1).max(12),
-        amount: z.number().min(0).max(1_000_000_000),
-        source: z.string().trim().min(1).max(60).default("allowance"),
-      })
-      .parse(d),
-  )
+  .inputValidator((d: unknown) => IncomeInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase
+    const d = new Date(data.occurred_on + "T00:00:00Z");
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth() + 1;
+    const { data: row, error } = await context.supabase
       .from("incomes")
-      .upsert(
-        {
-          user_id: context.userId,
-          year: data.year,
-          month: data.month,
-          amount: data.amount,
-          source: data.source,
-        },
-        { onConflict: "user_id,year,month,source" },
-      )
+      .insert({
+        user_id: context.userId,
+        year, month,
+        amount: data.amount,
+        source: data.source,
+        occurred_on: data.occurred_on,
+        description: data.description ?? null,
+      })
       .select()
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, context.userId, "income_set", "incomes", result.id, {
-      amount: data.amount,
-      year: data.year,
-      month: data.month,
+    await logActivity(context.supabase, context.userId, "income_added", "incomes", row.id, {
+      amount: data.amount, source: data.source,
     });
-    return result;
+    return row;
   });
+
+export const updateIncome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    IncomeInput.partial().extend({ id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { id, ...patch } = data;
+    const update: Record<string, unknown> = { ...patch };
+    if (patch.occurred_on) {
+      const d2 = new Date(patch.occurred_on + "T00:00:00Z");
+      update.year = d2.getUTCFullYear();
+      update.month = d2.getUTCMonth() + 1;
+    }
+    const { data: row, error } = await context.supabase
+      .from("incomes")
+      .update(update)
+      .eq("id", id)
+      .eq("user_id", context.userId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "income_updated", "incomes", id, {});
+    return row;
+  });
+
+export const deleteIncome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("incomes")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "income_deleted", "incomes", data.id);
+    return { ok: true };
+  });
+
+// Back-compat shim: existing UI may still call upsertIncome (single allowance).
+// Adds a new income entry rather than overwriting.
+export const upsertIncome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      year: z.number().int().min(2000).max(2100),
+      month: z.number().int().min(1).max(12),
+      amount: z.number().min(0).max(1_000_000_000),
+      source: z.string().trim().min(1).max(60).default("allowance"),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const occurred_on = new Date(Date.UTC(data.year, data.month - 1, 1))
+      .toISOString().slice(0, 10);
+    const { data: row, error } = await context.supabase
+      .from("incomes")
+      .insert({
+        user_id: context.userId,
+        year: data.year, month: data.month,
+        amount: data.amount, source: data.source,
+        occurred_on,
+      })
+      .select().single();
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "income_added", "incomes", row.id, {
+      amount: data.amount, source: data.source,
+    });
+    return row;
+  });
+
 
 // ============================================================================
 // Expenses

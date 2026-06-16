@@ -10,12 +10,24 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { AppShell, requireAuth } from "@/components/layout/AppShell";
 
 export const Route = createFileRoute("/_authenticated/savings")({
+  ssr: false,
+  beforeLoad: requireAuth,
   component: SavingsPage,
 });
 
 function SavingsPage() {
+  const { email } = Route.useRouteContext();
+  return (
+    <AppShell email={email}>
+      <SavingsContent />
+    </AppShell>
+  );
+}
+
+function SavingsContent() {
   const qc = useQueryClient();
   const list = useServerFn(listGoals);
   const save = useServerFn(upsertGoal);

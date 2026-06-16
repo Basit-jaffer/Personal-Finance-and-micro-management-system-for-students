@@ -13,12 +13,24 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { AppShell, requireAuth } from "@/components/layout/AppShell";
 
 export const Route = createFileRoute("/_authenticated/budgets")({
+  ssr: false,
+  beforeLoad: requireAuth,
   component: BudgetsPage,
 });
 
 function BudgetsPage() {
+  const { email } = Route.useRouteContext();
+  return (
+    <AppShell email={email}>
+      <BudgetsContent />
+    </AppShell>
+  );
+}
+
+function BudgetsContent() {
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth() + 1;

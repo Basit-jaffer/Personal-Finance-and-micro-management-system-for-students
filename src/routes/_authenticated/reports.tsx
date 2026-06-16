@@ -10,14 +10,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Sparkles, Info } from "lucide-react";
 import { toast } from "sonner";
+import { AppShell, requireAuth } from "@/components/layout/AppShell";
 
 export const Route = createFileRoute("/_authenticated/reports")({
+  ssr: false,
+  beforeLoad: requireAuth,
   component: ReportsPage,
 });
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 function ReportsPage() {
+  const { email } = Route.useRouteContext();
+  return (
+    <AppShell email={email}>
+      <ReportsContent />
+    </AppShell>
+  );
+}
+
+function ReportsContent() {
   const now = new Date();
   const [year, setYear] = useState(now.getUTCFullYear());
   const [month, setMonth] = useState(now.getUTCMonth() + 1);

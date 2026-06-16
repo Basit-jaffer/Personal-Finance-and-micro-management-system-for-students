@@ -263,11 +263,16 @@ function DashboardContent() {
 
         {/* Recent activity */}
         <Card className="shadow-card border-border/60">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Activity className="size-4 text-accent" /> Recent activity
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Latest changes in your account</p>
+          <CardHeader className="pb-4 flex flex-row items-start justify-between gap-2">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="size-4 text-accent" /> Recent activity
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">Latest changes in your account</p>
+            </div>
+            <Button asChild size="sm" variant="ghost" className="h-8 gap-1.5 text-xs">
+              <Link to="/expenses"><Plus className="size-3.5" /> Log</Link>
+            </Button>
           </CardHeader>
           <CardContent>
             {data.recent_activity.length === 0 ? (

@@ -363,22 +363,16 @@ export const upsertGoal = createServerFn({ method: "POST" })
         id: z.string().uuid().optional(),
         name: z.string().trim().min(1).max(80),
         target_amount: z.number().positive().max(1_000_000_000),
-        saved_amount: z.number().min(0).max(1_000_000_000),
+        initial_contribution: z.number().min(0).max(1_000_000_000).optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const row = {
-      user_id: context.userId,
-      name: data.name,
-      target_amount: data.target_amount,
-      saved_amount: data.saved_amount,
-    };
     let result;
     if (data.id) {
       const { data: updated, error } = await context.supabase
         .from("saving_goals")
-        .update(row)
+        .update({ name: data.name, target_amount: data.target_amount })
         .eq("id", data.id)
         .eq("user_id", context.userId)
         .select()
@@ -389,15 +383,29 @@ export const upsertGoal = createServerFn({ method: "POST" })
     } else {
       const { data: inserted, error } = await context.supabase
         .from("saving_goals")
-        .insert(row)
+        .insert({
+          user_id: context.userId,
+          name: data.name,
+          target_amount: data.target_amount,
+          saved_amount: 0,
+        })
         .select()
         .single();
       if (error) throw new Error(error.message);
       result = inserted;
       await logActivity(context.supabase, context.userId, "goal_created", "saving_goals", result.id, { name: data.name });
+      if (data.initial_contribution && data.initial_contribution > 0) {
+        await context.supabase.from("saving_contributions").insert({
+          user_id: context.userId,
+          goal_id: result.id,
+          amount: data.initial_contribution,
+          contributed_on: new Date().toISOString().slice(0, 10),
+        });
+      }
     }
     return result;
   });
+
 
 export const deleteGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

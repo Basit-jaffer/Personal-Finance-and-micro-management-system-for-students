@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   ArrowUpRight, AlertTriangle, TrendingUp, Wallet, Receipt, Activity,
   ShieldCheck, Plus, ArrowDownRight, Sparkles, PiggyBank, FileBarChart, Target,
-  ArrowRight, ListFilter,
+  ArrowRight, ListFilter, Banknote,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,

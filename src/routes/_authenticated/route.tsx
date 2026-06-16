@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LayoutDashboard, Receipt, PiggyBank, Target, FileBarChart, Wallet, LogOut, Trash2, Menu, X } from "lucide-react";
+import { LayoutDashboard, Receipt, PiggyBank, Target, FileBarChart, Wallet, LogOut, Trash2, Menu, X, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteAllMyData } from "@/lib/finance.functions";
@@ -71,12 +71,12 @@ function AppShell() {
           open ? "translate-x-0 flex" : "-translate-x-full hidden lg:flex"
         }`}
       >
-        <div className="px-6 h-16 flex items-center gap-2 border-b border-sidebar-border">
+        <Link to="/dashboard" className="px-6 h-16 flex items-center gap-2 border-b border-sidebar-border hover:bg-white/5 transition">
           <div className="size-8 rounded-lg bg-accent text-accent-foreground grid place-items-center">
             <Wallet className="size-4" />
           </div>
-          <span className="font-semibold tracking-tight">Pocket</span>
-        </div>
+          <span className="font-semibold tracking-tight">Budget Buddy</span>
+        </Link>
         <nav className="flex-1 p-3 space-y-1">
           {NAV.map((item) => (
             <Link
@@ -104,7 +104,7 @@ function AppShell() {
 
       {/* Main */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-16 border-b bg-card flex items-center justify-between px-4 lg:px-8 sticky top-0 z-20">
+        <header className="h-16 border-b bg-card flex items-center gap-3 px-4 lg:px-8 sticky top-0 z-20">
           <button
             className="lg:hidden p-2 -ml-2"
             onClick={() => setOpen((v) => !v)}
@@ -112,6 +112,19 @@ function AppShell() {
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <div className="size-8 rounded-lg bg-accent text-accent-foreground grid place-items-center">
+              <Wallet className="size-4" />
+            </div>
+            <span className="font-semibold tracking-tight hidden sm:inline">Budget Buddy</span>
+          </Link>
+          {pathname !== "/dashboard" && (
+            <Button asChild variant="ghost" size="sm" className="gap-1 ml-2">
+              <Link to="/dashboard">
+                <ArrowLeft className="size-4" /> Dashboard
+              </Link>
+            </Button>
+          )}
           <div className="flex-1" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Wallet } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
+import { Sparkles, ShieldCheck, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -50,73 +51,94 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col justify-between bg-sidebar text-sidebar-foreground p-12">
-        <div className="flex items-center gap-2 text-xl font-semibold">
-          <div className="size-9 rounded-lg bg-accent text-accent-foreground grid place-items-center">
-            <Wallet className="size-5" />
+    <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
+      {/* Brand panel */}
+      <div className="hidden lg:flex flex-col justify-between bg-grad-hero text-white p-12 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
+        <div className="relative">
+          <Logo />
+        </div>
+        <div className="relative space-y-6 max-w-lg">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.08] border border-white/10 text-[11px] uppercase tracking-[0.18em] text-white/80">
+            <Sparkles className="size-3 text-accent" /> AI-assisted budgeting
           </div>
-          Pocket
-        </div>
-        <div>
-          <h1 className="text-4xl font-semibold tracking-tight">
-            Private, AI-assisted budgeting for students.
+          <h1 className="font-display text-5xl leading-[1.05] tracking-tight">
+            Private, intelligent finance built for students.
           </h1>
-          <p className="mt-4 text-sidebar-foreground/70 max-w-md">
+          <p className="text-white/60 leading-relaxed">
             Track expenses, forecast your month-end balance, and get smart suggestions —
-            without exposing sensitive data.
+            without ever exposing sensitive data.
           </p>
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <Feature icon={<TrendingUp className="size-4" />} label="Real-time forecasts" />
+            <Feature icon={<ShieldCheck className="size-4" />} label="Privacy by default" />
+          </div>
         </div>
-        <p className="text-xs text-sidebar-foreground/50">
+        <p className="relative text-xs text-white/40">
           AI suggestions only — not financial advice.
         </p>
       </div>
-      <div className="flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Welcome to Pocket</CardTitle>
-            <CardDescription>Sign in or create a free account.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="signin">
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="signin">Sign in</TabsTrigger>
-                <TabsTrigger value="signup">Create account</TabsTrigger>
-              </TabsList>
-              <TabsContent value="signin">
-                <form onSubmit={signIn} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email-in">Email</Label>
-                    <Input id="email-in" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pw-in">Password</Label>
-                    <Input id="pw-in" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Signing in…" : "Sign in"}
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form onSubmit={signUp} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email-up">Email</Label>
-                    <Input id="email-up" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pw-up">Password</Label>
-                    <Input id="pw-up" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Creating…" : "Create account"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+
+      {/* Auth panel */}
+      <div className="flex items-center justify-center p-6 lg:p-12 bg-background">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden mb-8"><Logo tone="light" /></div>
+          <Card className="border-border/60 shadow-lift">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-semibold tracking-tight">Welcome to Budget Buddy</CardTitle>
+              <CardDescription>Sign in or create a free account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="signin">
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="signin">Sign in</TabsTrigger>
+                  <TabsTrigger value="signup">Create account</TabsTrigger>
+                </TabsList>
+                <TabsContent value="signin">
+                  <form onSubmit={signIn} className="space-y-4 mt-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="email-in">Email</Label>
+                      <Input id="email-in" type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pw-in">Password</Label>
+                      <Input id="pw-in" type="password" placeholder="••••••••" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                    </div>
+                    <Button type="submit" disabled={loading} className="w-full h-11 font-medium">
+                      {loading ? "Signing in…" : "Sign in"}
+                    </Button>
+                  </form>
+                </TabsContent>
+                <TabsContent value="signup">
+                  <form onSubmit={signUp} className="space-y-4 mt-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="email-up">Email</Label>
+                      <Input id="email-up" type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pw-up">Password</Label>
+                      <Input id="pw-up" type="password" placeholder="At least 6 characters" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                    </div>
+                    <Button type="submit" disabled={loading} className="w-full h-11 font-medium">
+                      {loading ? "Creating…" : "Create account"}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Feature({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-2.5 text-sm text-white/80">
+      <span className="text-accent">{icon}</span>
+      {label}
     </div>
   );
 }

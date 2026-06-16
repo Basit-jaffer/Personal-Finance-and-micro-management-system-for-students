@@ -121,11 +121,8 @@ function AppShell() {
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-accent text-accent-foreground grid place-items-center">
-              <Wallet className="size-4" />
-            </div>
-            <span className="font-semibold tracking-tight hidden sm:inline">Budget Buddy</span>
+          <Link to="/dashboard" className="lg:hidden flex items-center">
+            <Logo collapsed />
           </Link>
           {pathname !== "/dashboard" && (
             <Button asChild variant="ghost" size="sm" className="gap-1 ml-2">

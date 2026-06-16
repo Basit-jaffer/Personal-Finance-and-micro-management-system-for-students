@@ -10,8 +10,11 @@ import { ArrowUpRight, AlertTriangle, TrendingUp, Wallet, Receipt, Activity, Shi
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
 } from "recharts";
+import { AppShell, requireAuth } from "@/components/layout/AppShell";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
+  ssr: false,
+  beforeLoad: requireAuth,
   component: Dashboard,
 });
 
@@ -33,6 +36,15 @@ const ACTION_LABEL: Record<string, string> = {
 };
 
 function Dashboard() {
+  const { email } = Route.useRouteContext();
+  return (
+    <AppShell email={email}>
+      <DashboardContent />
+    </AppShell>
+  );
+}
+
+function DashboardContent() {
   const now = new Date();
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth() + 1;

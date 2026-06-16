@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.recompute_goal_saved() FROM PUBLIC, anon, authenticated;

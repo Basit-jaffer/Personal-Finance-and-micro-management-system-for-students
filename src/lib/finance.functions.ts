@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 // ============================================================================
 // Helpers
@@ -123,47 +124,116 @@ export const getCurrentIncome = createServerFn({ method: "GET" })
       .select("*")
       .eq("user_id", context.userId)
       .eq("year", data.year)
-      .eq("month", data.month);
+      .eq("month", data.month)
+      .order("occurred_on", { ascending: false });
     if (error) throw new Error(error.message);
     const total = (rows ?? []).reduce((s, r) => s + Number(r.amount), 0);
     return { rows: rows ?? [], total };
   });
 
-export const upsertIncome = createServerFn({ method: "POST" })
+const IncomeInput = z.object({
+  amount: z.number().positive().max(1_000_000_000),
+  source: z.string().trim().min(1).max(60),
+  occurred_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  description: z.string().trim().max(500).optional().nullable(),
+});
+
+export const addIncome = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        year: z.number().int().min(2000).max(2100),
-        month: z.number().int().min(1).max(12),
-        amount: z.number().min(0).max(1_000_000_000),
-        source: z.string().trim().min(1).max(60).default("allowance"),
-      })
-      .parse(d),
-  )
+  .inputValidator((d: unknown) => IncomeInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: result, error } = await context.supabase
+    const d = new Date(data.occurred_on + "T00:00:00Z");
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth() + 1;
+    const { data: row, error } = await context.supabase
       .from("incomes")
-      .upsert(
-        {
-          user_id: context.userId,
-          year: data.year,
-          month: data.month,
-          amount: data.amount,
-          source: data.source,
-        },
-        { onConflict: "user_id,year,month,source" },
-      )
+      .insert({
+        user_id: context.userId,
+        year, month,
+        amount: data.amount,
+        source: data.source,
+        occurred_on: data.occurred_on,
+        description: data.description ?? null,
+      })
       .select()
       .single();
     if (error) throw new Error(error.message);
-    await logActivity(context.supabase, context.userId, "income_set", "incomes", result.id, {
-      amount: data.amount,
-      year: data.year,
-      month: data.month,
+    await logActivity(context.supabase, context.userId, "income_added", "incomes", row.id, {
+      amount: data.amount, source: data.source,
     });
-    return result;
+    return row;
   });
+
+export const updateIncome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    IncomeInput.partial().extend({ id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { id, ...patch } = data;
+    const update: Database["public"]["Tables"]["incomes"]["Update"] = { ...patch };
+    if (patch.occurred_on) {
+      const d2 = new Date(patch.occurred_on + "T00:00:00Z");
+      update.year = d2.getUTCFullYear();
+      update.month = d2.getUTCMonth() + 1;
+    }
+    const { data: row, error } = await context.supabase
+      .from("incomes")
+      .update(update)
+      .eq("id", id)
+      .eq("user_id", context.userId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "income_updated", "incomes", id, {});
+    return row;
+  });
+
+export const deleteIncome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("incomes")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "income_deleted", "incomes", data.id);
+    return { ok: true };
+  });
+
+// Back-compat shim: existing UI may still call upsertIncome (single allowance).
+// Adds a new income entry rather than overwriting.
+export const upsertIncome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      year: z.number().int().min(2000).max(2100),
+      month: z.number().int().min(1).max(12),
+      amount: z.number().min(0).max(1_000_000_000),
+      source: z.string().trim().min(1).max(60).default("allowance"),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const occurred_on = new Date(Date.UTC(data.year, data.month - 1, 1))
+      .toISOString().slice(0, 10);
+    const { data: row, error } = await context.supabase
+      .from("incomes")
+      .insert({
+        user_id: context.userId,
+        year: data.year, month: data.month,
+        amount: data.amount, source: data.source,
+        occurred_on,
+      })
+      .select().single();
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "income_added", "incomes", row.id, {
+      amount: data.amount, source: data.source,
+    });
+    return row;
+  });
+
 
 // ============================================================================
 // Expenses
@@ -293,22 +363,16 @@ export const upsertGoal = createServerFn({ method: "POST" })
         id: z.string().uuid().optional(),
         name: z.string().trim().min(1).max(80),
         target_amount: z.number().positive().max(1_000_000_000),
-        saved_amount: z.number().min(0).max(1_000_000_000),
+        initial_contribution: z.number().min(0).max(1_000_000_000).optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const row = {
-      user_id: context.userId,
-      name: data.name,
-      target_amount: data.target_amount,
-      saved_amount: data.saved_amount,
-    };
     let result;
     if (data.id) {
       const { data: updated, error } = await context.supabase
         .from("saving_goals")
-        .update(row)
+        .update({ name: data.name, target_amount: data.target_amount })
         .eq("id", data.id)
         .eq("user_id", context.userId)
         .select()
@@ -319,15 +383,29 @@ export const upsertGoal = createServerFn({ method: "POST" })
     } else {
       const { data: inserted, error } = await context.supabase
         .from("saving_goals")
-        .insert(row)
+        .insert({
+          user_id: context.userId,
+          name: data.name,
+          target_amount: data.target_amount,
+          saved_amount: 0,
+        })
         .select()
         .single();
       if (error) throw new Error(error.message);
       result = inserted;
       await logActivity(context.supabase, context.userId, "goal_created", "saving_goals", result.id, { name: data.name });
+      if (data.initial_contribution && data.initial_contribution > 0) {
+        await context.supabase.from("saving_contributions").insert({
+          user_id: context.userId,
+          goal_id: result.id,
+          amount: data.initial_contribution,
+          contributed_on: new Date().toISOString().slice(0, 10),
+        });
+      }
     }
     return result;
   });
+
 
 export const deleteGoal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -343,6 +421,70 @@ export const deleteGoal = createServerFn({ method: "POST" })
   });
 
 // ============================================================================
+// Savings contributions
+// ============================================================================
+
+export const listContributions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ goal_id: z.string().uuid().optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
+      .from("saving_contributions")
+      .select("*")
+      .eq("user_id", context.userId)
+      .order("contributed_on", { ascending: false });
+    if (data.goal_id) q = q.eq("goal_id", data.goal_id);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const addContribution = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      goal_id: z.string().uuid(),
+      amount: z.number().positive().max(1_000_000_000),
+      contributed_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      note: z.string().trim().max(500).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("saving_contributions")
+      .insert({
+        user_id: context.userId,
+        goal_id: data.goal_id,
+        amount: data.amount,
+        contributed_on: data.contributed_on ?? new Date().toISOString().slice(0, 10),
+        note: data.note ?? null,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "contribution_added", "saving_contributions", row.id, {
+      goal_id: data.goal_id, amount: data.amount,
+    });
+    return row;
+  });
+
+export const deleteContribution = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("saving_contributions")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "contribution_deleted", "saving_contributions", data.id);
+    return { ok: true };
+  });
+
+// ============================================================================
 // Dashboard (calculations)
 // ============================================================================
 
@@ -351,7 +493,7 @@ export const getDashboard = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => MonthInput.parse(d))
   .handler(async ({ data, context }) => {
     const { start, end, days_in_month } = monthRange(data.year, data.month);
-    const [catRes, incRes, expRes, actRes] = await Promise.all([
+    const [catRes, incRes, expRes, contribRes, actRes] = await Promise.all([
       context.supabase.from("categories").select("*").order("name"),
       context.supabase
         .from("incomes")
@@ -366,6 +508,12 @@ export const getDashboard = createServerFn({ method: "GET" })
         .gte("spent_at", start)
         .lt("spent_at", end),
       context.supabase
+        .from("saving_contributions")
+        .select("amount,contributed_on")
+        .eq("user_id", context.userId)
+        .gte("contributed_on", start)
+        .lt("contributed_on", end),
+      context.supabase
         .from("activity_log")
         .select("*")
         .eq("user_id", context.userId)
@@ -376,13 +524,15 @@ export const getDashboard = createServerFn({ method: "GET" })
     if (catRes.error) throw new Error(catRes.error.message);
     if (incRes.error) throw new Error(incRes.error.message);
     if (expRes.error) throw new Error(expRes.error.message);
+    if (contribRes.error) throw new Error(contribRes.error.message);
     if (actRes.error) throw new Error(actRes.error.message);
 
     const categories = catRes.data ?? [];
     const expenses = expRes.data ?? [];
     const total_income = (incRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
     const total_spent = expenses.reduce((s, e) => s + Number(e.amount), 0);
-    const remaining = total_income - total_spent;
+    const total_savings = (contribRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
+    const remaining = total_income - total_spent - total_savings;
 
     const today = new Date();
     const inThisMonth =
@@ -390,7 +540,7 @@ export const getDashboard = createServerFn({ method: "GET" })
     const days_passed = inThisMonth ? Math.max(1, today.getUTCDate()) : days_in_month;
     const forecast_spend =
       days_passed > 0 ? (total_spent / days_passed) * days_in_month : 0;
-    const forecast_remaining = total_income - forecast_spend;
+    const forecast_remaining = total_income - forecast_spend - total_savings;
 
     const category_breakdown = categories.map((c) => {
       const spent = expenses
@@ -399,15 +549,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       const budget = Number(c.monthly_budget);
       const ratio = budget > 0 ? spent / budget : 0;
       const status = ratio >= 1 ? "exceeded" : ratio >= 0.8 ? "warn" : "ok";
-      return {
-        id: c.id,
-        name: c.name,
-        budget,
-        spent,
-        remaining: budget - spent,
-        ratio,
-        status,
-      };
+      return { id: c.id, name: c.name, budget, spent, remaining: budget - spent, ratio, status };
     });
 
     const uncategorized_spent = expenses
@@ -419,6 +561,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       month: data.month,
       total_income,
       total_spent,
+      total_savings,
       remaining,
       forecast_spend,
       forecast_remaining,
@@ -429,6 +572,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       recent_activity: actRes.data ?? [],
     };
   });
+
 
 // ============================================================================
 // AI: categorize, parse NL, summarize
@@ -525,7 +669,7 @@ export const generateMonthlyReport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Re-use dashboard math
     const { start, end, days_in_month } = monthRange(data.year, data.month);
-    const [catRes, incRes, expRes] = await Promise.all([
+    const [catRes, incRes, expRes, contribRes] = await Promise.all([
       context.supabase.from("categories").select("*"),
       context.supabase
         .from("incomes")
@@ -539,16 +683,24 @@ export const generateMonthlyReport = createServerFn({ method: "POST" })
         .eq("user_id", context.userId)
         .gte("spent_at", start)
         .lt("spent_at", end),
+      context.supabase
+        .from("saving_contributions")
+        .select("amount")
+        .eq("user_id", context.userId)
+        .gte("contributed_on", start)
+        .lt("contributed_on", end),
     ]);
     if (catRes.error) throw new Error(catRes.error.message);
     if (incRes.error) throw new Error(incRes.error.message);
     if (expRes.error) throw new Error(expRes.error.message);
+    if (contribRes.error) throw new Error(contribRes.error.message);
 
     const categories = catRes.data ?? [];
     const expenses = expRes.data ?? [];
     const total_income = (incRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
     const total_spent = expenses.reduce((s, e) => s + Number(e.amount), 0);
-    const remaining = total_income - total_spent;
+    const total_savings = (contribRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
+    const remaining = total_income - total_spent - total_savings;
 
     const today = new Date();
     const inThisMonth =
@@ -556,7 +708,8 @@ export const generateMonthlyReport = createServerFn({ method: "POST" })
     const days_passed = inThisMonth ? Math.max(1, today.getUTCDate()) : days_in_month;
     const forecast_spend =
       days_passed > 0 ? (total_spent / days_passed) * days_in_month : 0;
-    const forecast_remaining = total_income - forecast_spend;
+    const forecast_remaining = total_income - forecast_spend - total_savings;
+
 
     const breakdown = categories.map((c) => {
       const spent = expenses
@@ -650,6 +803,7 @@ export const deleteAllMyData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const tables = [
+      "saving_contributions",
       "expenses",
       "categories",
       "incomes",

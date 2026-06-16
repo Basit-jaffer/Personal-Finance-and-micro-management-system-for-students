@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   listExpenses, addExpense, updateExpense, deleteExpense,
-  listCategories, suggestCategory, parseExpense,
+  listCategories, suggestCategory, parseExpense, upsertCategory,
 } from "@/lib/finance.functions";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, Sparkles, Wand2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Trash2, Sparkles, Wand2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell, requireAuth } from "@/components/layout/AppShell";
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/expenses")({
 });
 
 const UNCAT = "__uncat__";
+const NEW_CAT = "__new__";
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -48,6 +50,7 @@ function ExpensesContent() {
   const listCats = useServerFn(listCategories);
   const suggest = useServerFn(suggestCategory);
   const parseNL = useServerFn(parseExpense);
+  const upsertCat = useServerFn(upsertCategory);
 
   const expensesQuery = useQuery({
     queryKey: ["expenses", year, month],
@@ -64,6 +67,46 @@ function ExpensesContent() {
 
   const [nlSentence, setNlSentence] = useState("");
   const [parsing, setParsing] = useState(false);
+
+  // Inline new-category dialog
+  const [newCatOpen, setNewCatOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatBudget, setNewCatBudget] = useState("");
+  const [newCatTarget, setNewCatTarget] = useState<"add" | "row">("add");
+  const [newCatRowId, setNewCatRowId] = useState<string | null>(null);
+
+  const createCatMut = useMutation({
+    mutationFn: () =>
+      upsertCat({
+        data: {
+          name: newCatName.trim(),
+          monthly_budget: Number(newCatBudget || "0"),
+        },
+      }),
+    onSuccess: (cat: { id: string }) => {
+      toast.success(`Category "${newCatName.trim()}" created`);
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      if (newCatTarget === "add") {
+        setCategoryId(cat.id);
+      } else if (newCatRowId) {
+        updMut.mutate({ id: newCatRowId, category_id: cat.id });
+      }
+      setNewCatOpen(false);
+      setNewCatName("");
+      setNewCatBudget("");
+      setNewCatRowId(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function openNewCat(target: "add" | "row", rowId: string | null = null, prefill = "") {
+    setNewCatTarget(target);
+    setNewCatRowId(rowId);
+    setNewCatName(prefill);
+    setNewCatBudget("");
+    setNewCatOpen(true);
+  }
 
   const addMut = useMutation({
     mutationFn: () => add({
@@ -216,13 +259,25 @@ function ExpensesContent() {
                   <Sparkles className="size-3" /> {suggesting ? "…" : "AI"}
                 </Button>
               </Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
+              <Select
+                value={categoryId}
+                onValueChange={(v) => {
+                  if (v === NEW_CAT) {
+                    openNewCat("add", null, description.trim());
+                    return;
+                  }
+                  setCategoryId(v);
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={UNCAT}>Uncategorized</SelectItem>
                   {cats.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
+                  <SelectItem value={NEW_CAT} className="text-primary font-medium">
+                    + Create new category…
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -267,9 +322,13 @@ function ExpensesContent() {
                   <TableCell>
                     <Select
                       value={e.category_id ?? UNCAT}
-                      onValueChange={(v) =>
-                        updMut.mutate({ id: e.id, category_id: v === UNCAT ? null : v })
-                      }
+                      onValueChange={(v) => {
+                        if (v === NEW_CAT) {
+                          openNewCat("row", e.id, e.description ?? "");
+                          return;
+                        }
+                        updMut.mutate({ id: e.id, category_id: v === UNCAT ? null : v });
+                      }}
                     >
                       <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -277,6 +336,9 @@ function ExpensesContent() {
                         {cats.map((c) => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}
+                        <SelectItem value={NEW_CAT} className="text-primary font-medium">
+                          + Create new category…
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -299,6 +361,58 @@ function ExpensesContent() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={newCatOpen} onOpenChange={setNewCatOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="size-4" /> New category
+            </DialogTitle>
+            <DialogDescription>
+              Create a category on the fly and assign it to this expense.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-3"
+            onSubmit={(ev) => {
+              ev.preventDefault();
+              if (!newCatName.trim()) return toast.error("Name required");
+              const b = Number(newCatBudget || "0");
+              if (!Number.isFinite(b) || b < 0) return toast.error("Budget must be ≥ 0");
+              createCatMut.mutate();
+            }}
+          >
+            <div className="space-y-1">
+              <Label className="text-xs">Name</Label>
+              <Input
+                autoFocus
+                value={newCatName}
+                onChange={(ev) => setNewCatName(ev.target.value)}
+                placeholder="Clothes"
+                maxLength={60}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Monthly budget (optional)</Label>
+              <Input
+                type="number" min="0" step="0.01"
+                value={newCatBudget}
+                onChange={(ev) => setNewCatBudget(ev.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setNewCatOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createCatMut.isPending}>
+                {createCatMut.isPending ? "Creating…" : "Create & assign"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

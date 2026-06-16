@@ -229,8 +229,7 @@ export const updateExpense = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { id, ...patch } = data;
-    // If category changed and ai suggestion exists, mark user_corrected
-    const update: Record<string, unknown> = { ...patch };
+    let user_corrected: boolean | undefined;
     if (patch.category_id !== undefined) {
       const { data: existing } = await context.supabase
         .from("expenses")
@@ -238,13 +237,16 @@ export const updateExpense = createServerFn({ method: "POST" })
         .eq("id", id)
         .eq("user_id", context.userId)
         .maybeSingle();
-      if (existing?.ai_suggested_category_id && existing.ai_suggested_category_id !== patch.category_id) {
-        update.user_corrected = true;
+      if (
+        existing?.ai_suggested_category_id &&
+        existing.ai_suggested_category_id !== patch.category_id
+      ) {
+        user_corrected = true;
       }
     }
     const { data: row, error } = await context.supabase
       .from("expenses")
-      .update(update)
+      .update({ ...patch, ...(user_corrected !== undefined ? { user_corrected } : {}) })
       .eq("id", id)
       .eq("user_id", context.userId)
       .select()

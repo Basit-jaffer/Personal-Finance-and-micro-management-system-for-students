@@ -1,16 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getDashboard } from "@/lib/finance.functions";
+import { getDashboard, listExpenses, listCategories } from "@/lib/finance.functions";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ArrowUpRight, AlertTriangle, TrendingUp, Wallet, Receipt, Activity,
-  ShieldCheck, Plus, ArrowDownRight, Sparkles, PiggyBank,
+  ShieldCheck, Plus, ArrowDownRight, Sparkles, PiggyBank, FileBarChart, Target,
+  ArrowRight, ListFilter,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,

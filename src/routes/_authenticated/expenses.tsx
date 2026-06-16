@@ -138,14 +138,36 @@ function ExpensesContent() {
   });
 
   const updMut = useMutation({
-    mutationFn: (v: { id: string; category_id: string | null }) =>
-      update({ data: { id: v.id, category_id: v.category_id } }),
+    mutationFn: (v: { id: string; category_id?: string | null; amount?: number; description?: string; spent_at?: string }) =>
+      update({ data: v }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["expenses"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  // Inline edit state for a single expense row
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editDate, setEditDate] = useState("");
+
+  function startEdit(e: { id: string; amount: number | string; description: string | null; spent_at: string }) {
+    setEditId(e.id);
+    setEditAmount(String(e.amount));
+    setEditDesc(e.description ?? "");
+    setEditDate(e.spent_at);
+  }
+  function cancelEdit() { setEditId(null); }
+  function saveEdit(id: string) {
+    const n = Number(editAmount);
+    if (!Number.isFinite(n) || n < 0) return toast.error("Invalid amount");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(editDate)) return toast.error("Invalid date");
+    updMut.mutate({ id, amount: n, description: editDesc.trim(), spent_at: editDate });
+    setEditId(null);
+  }
+
 
   async function handleSuggest() {
     if (!description.trim()) return;

@@ -361,6 +361,58 @@ function ExpensesContent() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={newCatOpen} onOpenChange={setNewCatOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="size-4" /> New category
+            </DialogTitle>
+            <DialogDescription>
+              Create a category on the fly and assign it to this expense.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-3"
+            onSubmit={(ev) => {
+              ev.preventDefault();
+              if (!newCatName.trim()) return toast.error("Name required");
+              const b = Number(newCatBudget || "0");
+              if (!Number.isFinite(b) || b < 0) return toast.error("Budget must be ≥ 0");
+              createCatMut.mutate();
+            }}
+          >
+            <div className="space-y-1">
+              <Label className="text-xs">Name</Label>
+              <Input
+                autoFocus
+                value={newCatName}
+                onChange={(ev) => setNewCatName(ev.target.value)}
+                placeholder="Clothes"
+                maxLength={60}
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Monthly budget (optional)</Label>
+              <Input
+                type="number" min="0" step="0.01"
+                value={newCatBudget}
+                onChange={(ev) => setNewCatBudget(ev.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setNewCatOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createCatMut.isPending}>
+                {createCatMut.isPending ? "Creating…" : "Create & assign"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -7,9 +7,10 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import {
   ArrowUpRight, AlertTriangle, TrendingUp, Wallet, Receipt, Activity,
-  ShieldCheck, Plus, ArrowDownRight, Sparkles,
+  ShieldCheck, Plus, ArrowDownRight, Sparkles, PiggyBank,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -74,7 +75,7 @@ function DashboardContent() {
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.08] border border-white/10 text-[11px] uppercase tracking-[0.18em] text-white/80">
               <Sparkles className="size-3 text-accent" />
               {monthName}
@@ -87,6 +88,14 @@ function DashboardContent() {
                 ? `You have ${fmt(data.remaining)} left this month after spending so far.`
                 : `You've exceeded your income by ${fmt(Math.abs(data.remaining))} this month.`}
             </p>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button asChild size="sm" className="bg-white text-slate-900 hover:bg-white/90 shadow-sm">
+                <Link to="/expenses"><Plus className="size-4" /> Add expense</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">
+                <Link to="/budgets"><PiggyBank className="size-4" /> New category</Link>
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:gap-4 lg:min-w-[420px]">
@@ -171,9 +180,9 @@ function DashboardContent() {
               <CardTitle className="text-base">Spending by category</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">Budget vs. actual this month</p>
             </div>
-            <Link to="/budgets" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition">
-              Manage <ArrowUpRight className="size-3" />
-            </Link>
+            <Button asChild size="sm" variant="outline" className="h-8 gap-1.5">
+              <Link to="/budgets"><Plus className="size-3.5" /> Add category</Link>
+            </Button>
           </CardHeader>
           <CardContent className="space-y-6">
             {data.category_breakdown.length === 0 ? (
@@ -254,11 +263,16 @@ function DashboardContent() {
 
         {/* Recent activity */}
         <Card className="shadow-card border-border/60">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Activity className="size-4 text-accent" /> Recent activity
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Latest changes in your account</p>
+          <CardHeader className="pb-4 flex flex-row items-start justify-between gap-2">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="size-4 text-accent" /> Recent activity
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">Latest changes in your account</p>
+            </div>
+            <Button asChild size="sm" variant="ghost" className="h-8 gap-1.5 text-xs">
+              <Link to="/expenses"><Plus className="size-3.5" /> Log</Link>
+            </Button>
           </CardHeader>
           <CardContent>
             {data.recent_activity.length === 0 ? (

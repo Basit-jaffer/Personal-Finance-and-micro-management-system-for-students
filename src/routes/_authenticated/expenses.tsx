@@ -259,13 +259,25 @@ function ExpensesContent() {
                   <Sparkles className="size-3" /> {suggesting ? "…" : "AI"}
                 </Button>
               </Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
+              <Select
+                value={categoryId}
+                onValueChange={(v) => {
+                  if (v === NEW_CAT) {
+                    openNewCat("add", null, description.trim());
+                    return;
+                  }
+                  setCategoryId(v);
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={UNCAT}>Uncategorized</SelectItem>
                   {cats.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
+                  <SelectItem value={NEW_CAT} className="text-primary font-medium">
+                    + Create new category…
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -310,9 +322,13 @@ function ExpensesContent() {
                   <TableCell>
                     <Select
                       value={e.category_id ?? UNCAT}
-                      onValueChange={(v) =>
-                        updMut.mutate({ id: e.id, category_id: v === UNCAT ? null : v })
-                      }
+                      onValueChange={(v) => {
+                        if (v === NEW_CAT) {
+                          openNewCat("row", e.id, e.description ?? "");
+                          return;
+                        }
+                        updMut.mutate({ id: e.id, category_id: v === UNCAT ? null : v });
+                      }}
                     >
                       <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -320,6 +336,9 @@ function ExpensesContent() {
                         {cats.map((c) => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}
+                        <SelectItem value={NEW_CAT} className="text-primary font-medium">
+                          + Create new category…
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>

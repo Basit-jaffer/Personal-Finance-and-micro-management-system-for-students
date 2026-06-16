@@ -75,7 +75,7 @@ function DashboardContent() {
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
         <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.08] border border-white/10 text-[11px] uppercase tracking-[0.18em] text-white/80">
               <Sparkles className="size-3 text-accent" />
               {monthName}
@@ -88,6 +88,14 @@ function DashboardContent() {
                 ? `You have ${fmt(data.remaining)} left this month after spending so far.`
                 : `You've exceeded your income by ${fmt(Math.abs(data.remaining))} this month.`}
             </p>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button asChild size="sm" className="bg-white text-slate-900 hover:bg-white/90 shadow-sm">
+                <Link to="/expenses"><Plus className="size-4" /> Add expense</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">
+                <Link to="/budgets"><PiggyBank className="size-4" /> New category</Link>
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:gap-4 lg:min-w-[420px]">

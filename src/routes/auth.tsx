@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Logo } from "@/components/brand/Logo";
-import { Sparkles, ShieldCheck, TrendingUp } from "lucide-react";
+import { Sparkles, ShieldCheck, TrendingUp, MailCheck } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,

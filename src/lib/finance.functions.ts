@@ -795,6 +795,7 @@ export const deleteAllMyData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const tables = [
+      "saving_contributions",
       "expenses",
       "categories",
       "incomes",

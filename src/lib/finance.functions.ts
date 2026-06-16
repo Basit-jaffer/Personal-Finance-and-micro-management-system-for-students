@@ -413,6 +413,70 @@ export const deleteGoal = createServerFn({ method: "POST" })
   });
 
 // ============================================================================
+// Savings contributions
+// ============================================================================
+
+export const listContributions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ goal_id: z.string().uuid().optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
+      .from("saving_contributions")
+      .select("*")
+      .eq("user_id", context.userId)
+      .order("contributed_on", { ascending: false });
+    if (data.goal_id) q = q.eq("goal_id", data.goal_id);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const addContribution = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      goal_id: z.string().uuid(),
+      amount: z.number().positive().max(1_000_000_000),
+      contributed_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      note: z.string().trim().max(500).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("saving_contributions")
+      .insert({
+        user_id: context.userId,
+        goal_id: data.goal_id,
+        amount: data.amount,
+        contributed_on: data.contributed_on ?? new Date().toISOString().slice(0, 10),
+        note: data.note ?? null,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "contribution_added", "saving_contributions", row.id, {
+      goal_id: data.goal_id, amount: data.amount,
+    });
+    return row;
+  });
+
+export const deleteContribution = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("saving_contributions")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    await logActivity(context.supabase, context.userId, "contribution_deleted", "saving_contributions", data.id);
+    return { ok: true };
+  });
+
+// ============================================================================
 // Dashboard (calculations)
 // ============================================================================
 
@@ -421,7 +485,7 @@ export const getDashboard = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => MonthInput.parse(d))
   .handler(async ({ data, context }) => {
     const { start, end, days_in_month } = monthRange(data.year, data.month);
-    const [catRes, incRes, expRes, actRes] = await Promise.all([
+    const [catRes, incRes, expRes, contribRes, actRes] = await Promise.all([
       context.supabase.from("categories").select("*").order("name"),
       context.supabase
         .from("incomes")
@@ -436,6 +500,12 @@ export const getDashboard = createServerFn({ method: "GET" })
         .gte("spent_at", start)
         .lt("spent_at", end),
       context.supabase
+        .from("saving_contributions")
+        .select("amount,contributed_on")
+        .eq("user_id", context.userId)
+        .gte("contributed_on", start)
+        .lt("contributed_on", end),
+      context.supabase
         .from("activity_log")
         .select("*")
         .eq("user_id", context.userId)
@@ -446,13 +516,15 @@ export const getDashboard = createServerFn({ method: "GET" })
     if (catRes.error) throw new Error(catRes.error.message);
     if (incRes.error) throw new Error(incRes.error.message);
     if (expRes.error) throw new Error(expRes.error.message);
+    if (contribRes.error) throw new Error(contribRes.error.message);
     if (actRes.error) throw new Error(actRes.error.message);
 
     const categories = catRes.data ?? [];
     const expenses = expRes.data ?? [];
     const total_income = (incRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
     const total_spent = expenses.reduce((s, e) => s + Number(e.amount), 0);
-    const remaining = total_income - total_spent;
+    const total_savings = (contribRes.data ?? []).reduce((s, r) => s + Number(r.amount), 0);
+    const remaining = total_income - total_spent - total_savings;
 
     const today = new Date();
     const inThisMonth =
@@ -460,7 +532,7 @@ export const getDashboard = createServerFn({ method: "GET" })
     const days_passed = inThisMonth ? Math.max(1, today.getUTCDate()) : days_in_month;
     const forecast_spend =
       days_passed > 0 ? (total_spent / days_passed) * days_in_month : 0;
-    const forecast_remaining = total_income - forecast_spend;
+    const forecast_remaining = total_income - forecast_spend - total_savings;
 
     const category_breakdown = categories.map((c) => {
       const spent = expenses
@@ -469,15 +541,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       const budget = Number(c.monthly_budget);
       const ratio = budget > 0 ? spent / budget : 0;
       const status = ratio >= 1 ? "exceeded" : ratio >= 0.8 ? "warn" : "ok";
-      return {
-        id: c.id,
-        name: c.name,
-        budget,
-        spent,
-        remaining: budget - spent,
-        ratio,
-        status,
-      };
+      return { id: c.id, name: c.name, budget, spent, remaining: budget - spent, ratio, status };
     });
 
     const uncategorized_spent = expenses
@@ -489,6 +553,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       month: data.month,
       total_income,
       total_spent,
+      total_savings,
       remaining,
       forecast_spend,
       forecast_remaining,
@@ -499,6 +564,7 @@ export const getDashboard = createServerFn({ method: "GET" })
       recent_activity: actRes.data ?? [],
     };
   });
+
 
 // ============================================================================
 // AI: categorize, parse NL, summarize

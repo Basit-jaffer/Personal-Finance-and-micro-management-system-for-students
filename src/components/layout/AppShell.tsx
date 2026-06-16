@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard, Receipt, PiggyBank, Target, FileBarChart,
-  LogOut, Trash2, Menu, X, ChevronRight, Sparkles,
+  LogOut, Trash2, Menu, X, ChevronRight, Sparkles, ArrowLeft,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { toast } from "sonner";

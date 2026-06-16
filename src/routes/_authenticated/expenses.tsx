@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Trash2, Sparkles, Wand2, Plus } from "lucide-react";
+import { Trash2, Sparkles, Wand2, Plus, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell, requireAuth } from "@/components/layout/AppShell";
 
@@ -138,14 +138,36 @@ function ExpensesContent() {
   });
 
   const updMut = useMutation({
-    mutationFn: (v: { id: string; category_id: string | null }) =>
-      update({ data: { id: v.id, category_id: v.category_id } }),
+    mutationFn: (v: { id: string; category_id?: string | null; amount?: number; description?: string; spent_at?: string }) =>
+      update({ data: v }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["expenses"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  // Inline edit state for a single expense row
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editDate, setEditDate] = useState("");
+
+  function startEdit(e: { id: string; amount: number | string; description: string | null; spent_at: string }) {
+    setEditId(e.id);
+    setEditAmount(String(e.amount));
+    setEditDesc(e.description ?? "");
+    setEditDate(e.spent_at);
+  }
+  function cancelEdit() { setEditId(null); }
+  function saveEdit(id: string) {
+    const n = Number(editAmount);
+    if (!Number.isFinite(n) || n < 0) return toast.error("Invalid amount");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(editDate)) return toast.error("Invalid date");
+    updMut.mutate({ id, amount: n, description: editDesc.trim(), spent_at: editDate });
+    setEditId(null);
+  }
+
 
   async function handleSuggest() {
     if (!description.trim()) return;
@@ -307,18 +329,28 @@ function ExpensesContent() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
+                <TableHead className="w-32">Date</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Category</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="w-12"></TableHead>
+                <TableHead className="text-right w-32">Amount</TableHead>
+                <TableHead className="w-24 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(expensesQuery.data ?? []).map((e) => (
+              {(expensesQuery.data ?? []).map((e) => {
+                const isEditing = editId === e.id;
+                return (
                 <TableRow key={e.id}>
-                  <TableCell className="text-muted-foreground">{e.spent_at}</TableCell>
-                  <TableCell className="font-medium">{e.description || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground tabular-nums">
+                    {isEditing
+                      ? <Input type="date" value={editDate} onChange={(ev) => setEditDate(ev.target.value)} className="h-8" />
+                      : e.spent_at}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {isEditing
+                      ? <Input value={editDesc} onChange={(ev) => setEditDesc(ev.target.value)} className="h-8" maxLength={500} />
+                      : (e.description || "—")}
+                  </TableCell>
                   <TableCell>
                     <Select
                       value={e.category_id ?? UNCAT}
@@ -342,14 +374,35 @@ function ExpensesContent() {
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{Number(e.amount)}</TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="ghost" onClick={() => confirm("Delete this expense?") && delMut.mutate(e.id)}>
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
+                  <TableCell className="text-right tabular-nums">
+                    {isEditing
+                      ? <Input type="number" min="0" step="0.01" value={editAmount} onChange={(ev) => setEditAmount(ev.target.value)} className="h-8 text-right" />
+                      : Number(e.amount).toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {isEditing ? (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => saveEdit(e.id)} title="Save">
+                          <Check className="size-4 text-success" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={cancelEdit} title="Cancel">
+                          <X className="size-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => startEdit(e)} title="Edit">
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => confirm("Delete this expense?") && delMut.mutate(e.id)} title="Delete">
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      </>
+                    )}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
               {(expensesQuery.data ?? []).length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-6">

@@ -94,8 +94,8 @@ function DashboardContent() {
             </h1>
             <p className="text-white/60 text-sm max-w-md">
               {remainingPositive
-                ? `You have ${fmt(data.remaining)} left this month after spending so far.`
-                : `You've exceeded your income by ${fmt(Math.abs(data.remaining))} this month.`}
+                ? `${fmt(data.remaining)} available after spending${(data.total_savings ?? 0) > 0 ? " and savings" : ""} this month.`
+                : `Over budget by ${fmt(Math.abs(data.remaining))} — spending${(data.total_savings ?? 0) > 0 ? " plus savings" : ""} exceed income.`}
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
               <Button asChild size="sm" className="bg-white text-slate-900 hover:bg-white/90 shadow-sm">

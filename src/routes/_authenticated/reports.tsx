@@ -46,11 +46,11 @@ function ReportsContent() {
   });
 
   const expensesQuery = useQuery({
-    queryKey: ["report-expenses", year, month],
+    queryKey: ["expenses", year, month],
     queryFn: () => expFn({ data: { year, month } }),
   });
   const incomeQuery = useQuery({
-    queryKey: ["report-income", year, month],
+    queryKey: ["income", year, month],
     queryFn: () => incFn({ data: { year, month } }),
   });
 

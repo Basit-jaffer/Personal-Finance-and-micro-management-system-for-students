@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
+import heroIllustration from "@/assets/hero-illustration.png";
 import {
   BarChart3,
   Brain,
@@ -100,47 +101,63 @@ function LandingPage() {
         </div>
 
         <div className="relative mx-auto max-w-6xl px-6">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border/60 text-xs font-medium text-muted-foreground mb-8">
-              <Brain className="size-3.5 text-accent" />
-              AI-assisted budgeting for students
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border/60 text-xs font-medium text-muted-foreground mb-8">
+                <Brain className="size-3.5 text-accent" />
+                AI-assisted budgeting for students
+              </div>
+
+              <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-foreground">
+                Your money,
+                <br />
+                <span className="italic text-accent">intelligently</span> managed.
+              </h1>
+
+              <p className="mt-6 text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl">
+                Track expenses, forecast your month-end balance, and get smart
+                suggestions — without ever exposing sensitive data.
+              </p>
+
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <Button
+                  size="lg"
+                  className="h-12 px-7 bg-foreground text-background hover:bg-foreground/90 font-medium text-base gap-2"
+                  asChild
+                >
+                  <Link to="/auth">
+                    Get started free
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-12 px-7 font-medium text-base gap-2 border-border/60"
+                  asChild
+                >
+                  <Link to="/auth">Log in</Link>
+                </Button>
+              </div>
+
+              <p className="mt-4 text-xs text-muted-foreground">
+                No credit card required. Free for students.
+              </p>
             </div>
 
-            <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight text-foreground">
-              Your money,
-              <br />
-              <span className="italic text-accent">intelligently</span> managed.
-            </h1>
-
-            <p className="mt-6 text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl">
-              Track expenses, forecast your month-end balance, and get smart
-              suggestions — without ever exposing sensitive data.
-            </p>
-
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Button
-                size="lg"
-                className="h-12 px-7 bg-foreground text-background hover:bg-foreground/90 font-medium text-base gap-2"
-                asChild
-              >
-                <Link to="/auth">
-                  Get started free
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="h-12 px-7 font-medium text-base gap-2 border-border/60"
-                asChild
-              >
-                <Link to="/auth">Log in</Link>
-              </Button>
+            {/* Hero illustration — desktop only */}
+            <div className="hidden lg:flex items-center justify-center">
+              <div className="relative">
+                <div className="absolute -inset-4 bg-gradient-to-br from-accent/20 via-accent/5 to-transparent rounded-3xl blur-2xl opacity-50" />
+                <img
+                  src={heroIllustration}
+                  alt="Student managing finances with Budget Buddy"
+                  width={480}
+                  height={480}
+                  className="relative rounded-2xl object-cover"
+                />
+              </div>
             </div>
-
-            <p className="mt-4 text-xs text-muted-foreground">
-              No credit card required. Free for students.
-            </p>
           </div>
 
           {/* Dashboard preview card */}

@@ -99,6 +99,12 @@ function DashboardContent() {
               <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">
                 <Link to="/budgets"><PiggyBank className="size-4" /> New category</Link>
               </Button>
+              <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">
+                <Link to="/savings"><Target className="size-4" /> Savings goals</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">
+                <Link to="/reports"><FileBarChart className="size-4" /> Monthly report</Link>
+              </Button>
             </div>
           </div>
 

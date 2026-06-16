@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
+import heroIllustration from "@/assets/hero-illustration.png";
 import {
   BarChart3,
   Brain,

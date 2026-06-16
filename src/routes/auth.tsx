@@ -129,6 +129,10 @@ function AuthPage() {
                 <TabsContent value="signup">
                   <form onSubmit={signUp} className="space-y-4 mt-6">
                     <div className="space-y-2">
+                      <Label htmlFor="name-up">Full name</Label>
+                      <Input id="name-up" type="text" placeholder="Jane Doe" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="email-up">Email</Label>
                       <Input id="email-up" type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
                     </div>
@@ -136,10 +140,18 @@ function AuthPage() {
                       <Label htmlFor="pw-up">Password</Label>
                       <Input id="pw-up" type="password" placeholder="At least 6 characters" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pw-up2">Confirm password</Label>
+                      <Input id="pw-up2" type="password" placeholder="Re-enter your password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      We'll send a verification link to your email after signup.
+                    </p>
                     <Button type="submit" disabled={loading} className="w-full h-11 font-medium">
                       {loading ? "Creating…" : "Create account"}
                     </Button>
                   </form>
+
                 </TabsContent>
               </Tabs>
             </CardContent>

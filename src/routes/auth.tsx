@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Logo } from "@/components/brand/Logo";
-import { Sparkles, ShieldCheck, TrendingUp } from "lucide-react";
+import { Sparkles, ShieldCheck, TrendingUp, MailCheck } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -22,6 +22,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [signupSentEmail, setSignupSentEmail] = useState<string | null>(null);
+  const [tab, setTab] = useState<"signin" | "signup">("signin");
 
 
   useEffect(() => {
@@ -59,8 +61,9 @@ function AuthPage() {
       toast.success("Account created. Welcome!");
       navigate({ to: "/dashboard", replace: true });
     } else {
+      setSignupSentEmail(email);
       toast.success("Verification email sent", {
-        description: `We sent a confirmation link to ${email}. Please check your inbox to verify your account.`,
+        description: `We sent a confirmation link to ${email}.`,
       });
     }
   }
@@ -106,7 +109,7 @@ function AuthPage() {
               <CardDescription>Sign in or create a free account.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="signin">
+              <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="signin">Sign in</TabsTrigger>
                   <TabsTrigger value="signup">Create account</TabsTrigger>
@@ -127,31 +130,72 @@ function AuthPage() {
                   </form>
                 </TabsContent>
                 <TabsContent value="signup">
-                  <form onSubmit={signUp} className="space-y-4 mt-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name-up">Full name</Label>
-                      <Input id="name-up" type="text" placeholder="Jane Doe" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                  {signupSentEmail ? (
+                    <div className="mt-6 space-y-5 text-center">
+                      <div className="mx-auto size-14 rounded-full bg-accent/10 text-accent grid place-items-center">
+                        <MailCheck className="size-7" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-semibold tracking-tight">Check your inbox</h3>
+                        <p className="text-sm text-muted-foreground">
+                          We sent a verification link to{" "}
+                          <span className="font-medium text-foreground">{signupSentEmail}</span>.
+                          Click the link to activate your account, then sign in.
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 pt-2">
+                        <Button
+                          type="button"
+                          className="w-full h-11 font-medium"
+                          onClick={() => {
+                            setTab("signin");
+                            setPassword("");
+                            setConfirmPassword("");
+                            setFullName("");
+                            setSignupSentEmail(null);
+                          }}
+                        >
+                          Go to sign in
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="w-full h-10 text-xs text-muted-foreground"
+                          onClick={() => setSignupSentEmail(null)}
+                        >
+                          Use a different email
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground pt-2">
+                        Didn't get it? Check your spam folder, or wait a minute and try again.
+                      </p>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email-up">Email</Label>
-                      <Input id="email-up" type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="pw-up">Password</Label>
-                      <Input id="pw-up" type="password" placeholder="At least 6 characters" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="pw-up2">Confirm password</Label>
-                      <Input id="pw-up2" type="password" placeholder="Re-enter your password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      We'll send a verification link to your email after signup.
-                    </p>
-                    <Button type="submit" disabled={loading} className="w-full h-11 font-medium">
-                      {loading ? "Creating…" : "Create account"}
-                    </Button>
-                  </form>
-
+                  ) : (
+                    <form onSubmit={signUp} className="space-y-4 mt-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="name-up">Full name</Label>
+                        <Input id="name-up" type="text" placeholder="Jane Doe" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email-up">Email</Label>
+                        <Input id="email-up" type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pw-up">Password</Label>
+                        <Input id="pw-up" type="password" placeholder="At least 6 characters" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="pw-up2">Confirm password</Label>
+                        <Input id="pw-up2" type="password" placeholder="Re-enter your password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        We'll send a verification link to your email after signup.
+                      </p>
+                      <Button type="submit" disabled={loading} className="w-full h-11 font-medium">
+                        {loading ? "Creating…" : "Create account"}
+                      </Button>
+                    </form>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>

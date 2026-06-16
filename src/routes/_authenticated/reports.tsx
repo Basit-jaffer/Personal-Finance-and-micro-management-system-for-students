@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { generateMonthlyReport, getMonthlyReport } from "@/lib/finance.functions";
+import { generateMonthlyReport, getMonthlyReport, listExpenses, getCurrentIncome } from "@/lib/finance.functions";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,11 +37,26 @@ function ReportsContent() {
 
   const fetch = useServerFn(getMonthlyReport);
   const gen = useServerFn(generateMonthlyReport);
+  const expFn = useServerFn(listExpenses);
+  const incFn = useServerFn(getCurrentIncome);
 
   const reportQuery = useQuery({
     queryKey: ["report", year, month],
     queryFn: () => fetch({ data: { year, month } }),
   });
+
+  const expensesQuery = useQuery({
+    queryKey: ["report-expenses", year, month],
+    queryFn: () => expFn({ data: { year, month } }),
+  });
+  const incomeQuery = useQuery({
+    queryKey: ["report-income", year, month],
+    queryFn: () => incFn({ data: { year, month } }),
+  });
+
+  const hasData =
+    (expensesQuery.data?.length ?? 0) > 0 || (Number(incomeQuery.data?.total ?? 0) > 0);
+  const dataLoading = expensesQuery.isLoading || incomeQuery.isLoading;
 
   const genMut = useMutation({
     mutationFn: () => gen({ data: { year, month } }),
@@ -77,14 +92,34 @@ function ReportsContent() {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={() => genMut.mutate()} disabled={genMut.isPending}>
+          <Button
+            onClick={() => {
+              if (!hasData) {
+                toast.error("No data for this month yet — add an expense or income first.");
+                return;
+              }
+              genMut.mutate();
+            }}
+            disabled={genMut.isPending || dataLoading || !hasData}
+          >
             <Sparkles className="size-4 mr-1" />
             {genMut.isPending ? "Generating…" : r ? "Regenerate" : "Generate"}
           </Button>
         </div>
       </div>
 
-      {!r && (
+      {!dataLoading && !hasData && (
+        <Card>
+          <CardContent className="p-10 text-center space-y-2">
+            <div className="text-base font-medium">Nothing to report for {MONTHS[month - 1]} {year}</div>
+            <p className="text-sm text-muted-foreground">
+              You haven't logged any expenses or income for this month. Add some entries first, then come back to generate a report.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {hasData && !r && (
         <Card>
           <CardContent className="p-10 text-center text-muted-foreground">
             No report yet for {MONTHS[month - 1]} {year}. Click <strong>Generate</strong>.

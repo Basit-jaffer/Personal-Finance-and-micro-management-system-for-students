@@ -14,7 +14,213 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          metadata: Json
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          monthly_budget: number
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          monthly_budget?: number
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          monthly_budget?: number
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          ai_suggested_category_id: string | null
+          amount: number
+          category_id: string | null
+          created_at: string
+          description: string
+          id: string
+          spent_at: string
+          user_corrected: boolean
+          user_id: string
+        }
+        Insert: {
+          ai_suggested_category_id?: string | null
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          spent_at?: string
+          user_corrected?: boolean
+          user_id: string
+        }
+        Update: {
+          ai_suggested_category_id?: string | null
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          spent_at?: string
+          user_corrected?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_ai_suggested_category_id_fkey"
+            columns: ["ai_suggested_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incomes: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          month: number
+          source: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          month: number
+          source?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          month?: number
+          source?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      monthly_reports: {
+        Row: {
+          ai_summary: string
+          category_breakdown: Json
+          forecast_remaining: number
+          forecast_spend: number
+          generated_at: string
+          id: string
+          month: number
+          remaining: number
+          total_income: number
+          total_spent: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          ai_summary: string
+          category_breakdown: Json
+          forecast_remaining: number
+          forecast_spend: number
+          generated_at?: string
+          id?: string
+          month: number
+          remaining: number
+          total_income: number
+          total_spent: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          ai_summary?: string
+          category_breakdown?: Json
+          forecast_remaining?: number
+          forecast_spend?: number
+          generated_at?: string
+          id?: string
+          month?: number
+          remaining?: number
+          total_income?: number
+          total_spent?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      saving_goals: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          saved_amount: number
+          target_amount: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          saved_amount?: number
+          target_amount: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          saved_amount?: number
+          target_amount?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

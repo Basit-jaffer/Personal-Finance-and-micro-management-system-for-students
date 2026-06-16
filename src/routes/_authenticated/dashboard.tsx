@@ -1,16 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getDashboard } from "@/lib/finance.functions";
+import { getDashboard, listExpenses, listCategories } from "@/lib/finance.functions";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ArrowUpRight, AlertTriangle, TrendingUp, Wallet, Receipt, Activity,
-  ShieldCheck, Plus, ArrowDownRight, Sparkles, PiggyBank,
+  ShieldCheck, Plus, ArrowDownRight, Sparkles, PiggyBank, FileBarChart, Target,
+  ArrowRight, ListFilter,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -94,6 +98,12 @@ function DashboardContent() {
               </Button>
               <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">
                 <Link to="/budgets"><PiggyBank className="size-4" /> New category</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">
+                <Link to="/savings"><Target className="size-4" /> Savings goals</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="bg-white/[0.04] border-white/15 text-white hover:bg-white/[0.1] hover:text-white">
+                <Link to="/reports"><FileBarChart className="size-4" /> Monthly report</Link>
               </Button>
             </div>
           </div>
@@ -308,7 +318,141 @@ function DashboardContent() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Entries list with filters */}
+      <EntriesSection year={year} month={month} />
+
+      {/* Quick links to other sections */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <QuickLinkCard
+          to="/savings"
+          icon={<Target className="size-5" />}
+          title="Savings goals"
+          description="Track progress toward what you're saving for."
+        />
+        <QuickLinkCard
+          to="/reports"
+          icon={<FileBarChart className="size-5" />}
+          title="Monthly report"
+          description="AI-generated summary, forecast and breakdown."
+        />
+      </div>
     </div>
+  );
+}
+
+function QuickLinkCard({
+  to, icon, title, description,
+}: { to: string; icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <Link
+      to={to}
+      className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card p-5 shadow-card hover:shadow-lift hover:-translate-y-0.5 transition-all flex items-center gap-4"
+    >
+      <div className="size-11 rounded-xl bg-accent/10 text-accent grid place-items-center group-hover:bg-accent group-hover:text-accent-foreground transition">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold">{title}</div>
+        <div className="text-xs text-muted-foreground mt-0.5">{description}</div>
+      </div>
+      <ArrowRight className="size-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition" />
+    </Link>
+  );
+}
+
+type Range = "today" | "week" | "month";
+
+function EntriesSection({ year, month }: { year: number; month: number }) {
+  const [range, setRange] = useState<Range>("month");
+  const list = useServerFn(listExpenses);
+  const listCats = useServerFn(listCategories);
+
+  const expensesQuery = useQuery({
+    queryKey: ["expenses", year, month],
+    queryFn: () => list({ data: { year, month } }),
+  });
+  const catQuery = useQuery({ queryKey: ["categories"], queryFn: () => listCats() });
+  const catMap = useMemo(
+    () => new Map((catQuery.data ?? []).map((c) => [c.id, c.name])),
+    [catQuery.data],
+  );
+
+  const filtered = useMemo(() => {
+    const all = expensesQuery.data ?? [];
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const weekAgo = new Date(now.getTime() - 6 * 86400000).toISOString().slice(0, 10);
+    return all.filter((e) => {
+      if (range === "today") return e.spent_at === today;
+      if (range === "week") return e.spent_at >= weekAgo;
+      return true;
+    });
+  }, [expensesQuery.data, range]);
+
+  const total = filtered.reduce((s, e) => s + Number(e.amount), 0);
+
+  return (
+    <Card className="shadow-card border-border/60">
+      <CardHeader className="flex flex-row items-start justify-between gap-3 pb-4">
+        <div>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ListFilter className="size-4 text-accent" /> Your entries
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {filtered.length} {filtered.length === 1 ? "entry" : "entries"} · {fmt(total)} total
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Tabs value={range} onValueChange={(v) => setRange(v as Range)}>
+            <TabsList className="h-8">
+              <TabsTrigger value="today" className="text-xs px-3">Today</TabsTrigger>
+              <TabsTrigger value="week" className="text-xs px-3">Week</TabsTrigger>
+              <TabsTrigger value="month" className="text-xs px-3">Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button asChild size="sm" variant="outline" className="h-8 gap-1.5">
+            <Link to="/expenses"><Plus className="size-3.5" /> Add</Link>
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {filtered.length === 0 ? (
+          <EmptyState
+            title="No entries in this range"
+            description="Switch the filter or add a new expense to see it here."
+            action={
+              <Link to="/expenses" className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline">
+                <Plus className="size-4" /> Add expense
+              </Link>
+            }
+          />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-28">Date</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((e) => (
+                <TableRow key={e.id}>
+                  <TableCell className="text-muted-foreground num text-xs">{e.spent_at}</TableCell>
+                  <TableCell className="font-medium">{e.description || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {e.category_id ? catMap.get(e.category_id) ?? "—" : "Uncategorized"}
+                  </TableCell>
+                  <TableCell className="text-right num font-medium">{fmt(Number(e.amount))}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

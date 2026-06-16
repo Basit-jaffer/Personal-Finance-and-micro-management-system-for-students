@@ -180,9 +180,9 @@ function DashboardContent() {
               <CardTitle className="text-base">Spending by category</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">Budget vs. actual this month</p>
             </div>
-            <Link to="/budgets" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition">
-              Manage <ArrowUpRight className="size-3" />
-            </Link>
+            <Button asChild size="sm" variant="outline" className="h-8 gap-1.5">
+              <Link to="/budgets"><Plus className="size-3.5" /> Add category</Link>
+            </Button>
           </CardHeader>
           <CardContent className="space-y-6">
             {data.category_breakdown.length === 0 ? (

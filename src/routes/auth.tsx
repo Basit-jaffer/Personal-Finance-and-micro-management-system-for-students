@@ -109,7 +109,7 @@ function AuthPage() {
               <CardDescription>Sign in or create a free account.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="signin">
+              <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
                 <TabsList className="grid grid-cols-2 w-full">
                   <TabsTrigger value="signin">Sign in</TabsTrigger>
                   <TabsTrigger value="signup">Create account</TabsTrigger>

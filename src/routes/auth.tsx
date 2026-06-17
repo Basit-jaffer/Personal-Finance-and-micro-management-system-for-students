@@ -56,7 +56,29 @@ function AuthPage() {
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
+        toast.error("Account already exists", {
+          description: "An account with this email already exists. Please sign in instead.",
+        });
+        setTab("signin");
+        setPassword("");
+        setConfirmPassword("");
+        return;
+      }
+      return toast.error(error.message);
+    }
+    // Supabase returns a user with empty identities[] when the email is already registered
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      toast.error("Account already exists", {
+        description: "An account with this email already exists. Please sign in instead.",
+      });
+      setTab("signin");
+      setPassword("");
+      setConfirmPassword("");
+      return;
+    }
     if (data.session) {
       toast.success("Account created. Welcome!");
       navigate({ to: "/dashboard", replace: true });

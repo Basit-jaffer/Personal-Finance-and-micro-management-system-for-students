@@ -4,6 +4,27 @@ A privacy-first budgeting MVP. Track expenses, forecast your month-end balance, 
 
 Built for the MAJU CodeCraft Hackathon (Project 2).
 
+
+## Problem Statement
+
+Students often struggle to manage limited monthly income, track expenses, and plan savings effectively. Existing financial tools are often too complex, expensive, or not tailored to student budgeting habits.
+
+Pocket helps students manage income, expenses, budgets, and savings goals through a simple AI-assisted personal finance platform that provides budgeting insights, spending forecasts, and financial awareness.
+
+
+## Why Budget Buddy?
+
+Budget Buddy is designed specifically for students who need a lightweight financial management solution.
+
+The platform helps users:
+
+* Understand where their money is going
+* Stay within budget limits
+* Build savings habits
+* Receive AI-assisted financial insights
+* Forecast future spending before overspending occurs
+
+
 ## Tech Stack
 
 - **Frontend:** React 19 + TanStack Start + TanStack Router + Tailwind v4 + shadcn/ui + Recharts
@@ -90,6 +111,15 @@ src/
 - **Forecast remaining balance** = `monthly_income − forecast_spend`
 - Alert thresholds: ≥ 80 % → warn, ≥ 100 % → exceeded
 
+## Key Engineering Decisions
+
+* TanStack Start was selected to keep frontend and backend logic within a single type-safe application.
+* Supabase was chosen for authentication, PostgreSQL persistence, and Row Level Security.
+* Server Functions centralize business logic and reduce client-side complexity.
+* AI functionality is isolated behind server-side handlers to protect API keys and improve security.
+* Financial calculations are performed server-side to ensure consistency across all views.
+
+
 ## Security
 
 - **Authentication:** Supabase Auth (email + password). `/_authenticated/*` routes gated by client + server bearer check.
@@ -129,7 +159,7 @@ bun install
 bun run dev
 ```
 
-Open the dev URL, click **Create account**, sign in.
+Open the dev URL, click **Create account**, and sign in.
 
 ## Demo Story (5 minutes)
 
@@ -140,18 +170,18 @@ Open the dev URL, click **Create account**, sign in.
 5. Add another `Lunch 70` (Food) → 80 % alert appears on Dashboard.
 6. Edit one expense category to demonstrate correction tracking.
 7. **Reports:** click **Generate** → see forecast + AI summary.
-8. **Savings:** create a goal `Laptop 800`, mark `200` saved.
+8. **Savings:** Create a goal `Laptop 800`, adding money by seeing a percentage.
 9. Show **Recent Activity** on Dashboard reflecting every action.
 10. User menu → **Delete all my data** → confirm privacy guarantee.
 
 ## Known Limitations / Future Scope
 
-- Single role (student). Parent/guardian view and financial-mentor sharing not implemented.
+- Single role (student). Parent/guardian view and financial-mentor sharing are not implemented.
 - No receipt OCR, no recurring-expense engine, no shared expense splitting.
-- Currency-agnostic — amounts are unitless numbers; multi-currency is future scope.
-- AI categorization quality depends on the user's category names.
+- Currency-agnostic — amounts are unitless numbers; multi-currency is a future scope.
+- AI categorisation quality depends on the user's category names.
 - No PWA/offline support yet.
 
 ---
 
-Built by Team Pocket · Organized by MAJU CodeCraft Community.
+Built by Team ARKVEX · Abdul Basit

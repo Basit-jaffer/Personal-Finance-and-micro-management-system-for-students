@@ -143,6 +143,14 @@ src/
 - **Privacy:** users can delete all their data from the user menu (cascading deletes).
 - **Audit:** sensitive writes append to `activity_log` for the Recent Activity feed.
 
+## Validation
+
+Manual test cases used during development can be found in:
+
+docs/test-cases.md
+
+
+
 ## AI Usage Declaration
 
 | Question | Answer |
@@ -193,6 +201,12 @@ Open the dev URL, click **Create account**, and sign in.
 - No PWA/offline support yet.
 - Because this is an MVP developed during a hackathon, features such as OCR receipts, recurring transactions and bank integrations are intentionally excluded.
 
----
+# Screenshots
+
+All screenshots are located in:
+
+`docs/screenshots/`
+
+
 
 Built by Team ARKVEX · Abdul Basit

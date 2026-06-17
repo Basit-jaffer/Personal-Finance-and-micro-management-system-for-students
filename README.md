@@ -35,6 +35,11 @@ The platform helps users:
 * Forecast future spending before overspending occurs
 
 
+## Live Demo
+
+https://budgetbuddy.basitjaffar.com/
+
+
 ## Tech Stack
 
 - **Frontend:** React 19 + TanStack Start + TanStack Router + Tailwind v4 + shadcn/ui + Recharts

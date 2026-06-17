@@ -1,6 +1,6 @@
-# Pocket — Agentic Personal Finance & Micro-Budgeting for Students
+# Budget Buddy Agentic Personal Finance & Micro-Budgeting for Students
 
-A privacy-first budgeting MVP. Track expenses, forecast your month-end balance, and get AI-assisted categorization, natural-language entry, and monthly summaries — without exposing sensitive financial data.
+A privacy-first budgeting MVP. Track expenses, forecast your month-end balance, and get AI-assisted categorization, natural-language entry, and monthly summaries without exposing sensitive financial data.
 
 Built for the MAJU CodeCraft Hackathon (Project 2).
 
@@ -9,7 +9,7 @@ Built for the MAJU CodeCraft Hackathon (Project 2).
 
 Students often struggle to manage limited monthly income, track expenses, and plan savings effectively. Existing financial tools are often too complex, expensive, or not tailored to student budgeting habits.
 
-Pocket helps students manage income, expenses, budgets, and savings goals through a simple AI-assisted personal finance platform that provides budgeting insights, spending forecasts, and financial awareness.
+Budget Buddy helps students manage income, expenses, budgets, and savings goals through a simple AI-assisted personal finance platform that provides budgeting insights, spending forecasts, and financial awareness.
 
 
 ## Why Budget Buddy?
@@ -28,7 +28,7 @@ The platform helps users:
 ## Tech Stack
 
 - **Frontend:** React 19 + TanStack Start + TanStack Router + Tailwind v4 + shadcn/ui + Recharts
-- **Backend:** TanStack Start server functions (`createServerFn`) — typed RPC, no separate API layer
+- **Backend:** TanStack Start server functions (`createServerFn`)  typed RPC, no separate API layer
 - **Database & Auth:** Lovable Cloud (Supabase Postgres + Auth) with Row Level Security
 - **AI:** Lovable AI Gateway (`google/gemini-3-flash-preview`)
 

@@ -1,8 +1,18 @@
-# Budget Buddy Agentic Personal Finance & Micro-Budgeting for Students
+# Project Summary
 
-A privacy-first budgeting MVP. Track expenses, forecast your month-end balance, and get AI-assisted categorization, natural-language entry, and monthly summaries without exposing sensitive financial data.
+Budget Buddy is an AI-assisted personal finance platform built for students.
 
-Built for the MAJU CodeCraft Hackathon (Project 2).
+The system enables users to:
+
+- Track income
+- Record expenses
+- Create monthly budgets
+- Monitor savings goals
+- Forecast monthly spending
+- Receive AI-powered categorization
+- Generate AI monthly reports
+
+The application follows a privacy-first architecture using Supabase Row Level Security, ensuring each student only accesses their own financial records.
 
 
 ## Problem Statement
@@ -181,6 +191,7 @@ Open the dev URL, click **Create account**, and sign in.
 - Currency-agnostic — amounts are unitless numbers; multi-currency is a future scope.
 - AI categorisation quality depends on the user's category names.
 - No PWA/offline support yet.
+- Because this is an MVP developed during a hackathon, features such as OCR receipts, recurring transactions and bank integrations are intentionally excluded.
 
 ---
 
